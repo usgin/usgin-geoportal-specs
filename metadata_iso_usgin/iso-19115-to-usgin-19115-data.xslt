@@ -14,38 +14,26 @@
 	xmlns:azgs2="http://azgs.az.gov/2010/metadata/source/v-1-3"
 	xsi:schemaLocation="http://www.isotc211.org/2005/gmd http://schemas.opengis.net/csw/2.0.2/profiles/apiso/1.0.0/apiso.xsd">
 	<xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
-	<!--  <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"
-        exclude-result-prefixes="fn azgs1 azgs2 ns2 xs xsi xsl usgin csw"/>
--->
-	<!-- unused namespaces...
-          xmlns:exslt="http://exslt.org/common"  xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:usgin="http://resources.usgin.org/xslt/ISO2USGINISO" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ns2="http://azgs.az.gov/2010/metadata/generator" xmlns:azgs1="http://azgs.az.gov/2010/metadata/template/v-1-2" xmlns:azgs2="http://azgs.az.gov/2010/metadata/source/v-1-3"
-      -->
-	<!-- This xslt transforms an ISO19139 XML metadata record to conform to requirements of USGIN
+<!-- 
+This xslt transforms an ISO19139 XML metadata record to conform to requirements of USGIN
     catalogs. 
     Leah Musil and Stephen Richard
-    2013-03-28 -->
+    2013-03-28 
+-->
 	<xsl:param name="sourceUrl"/>
 	<xsl:param name="serviceType"/>
 	<xsl:param name="currentDate"/>
-	<!--  <xsl:param name="generatedUUID"/>
-    <xsl:param name="faxPhone"/>
-    <xsl:param name="voicePhone"/>
-    <xsl:param name="codeListValue"/>
-    <xsl:param name="electronicMailAddress"/> -->
-	<!-- use this to document things added or changed by this xslt -->
+	<!-- maintenance note checks if metadata has been processed -->
 	<xsl:param name="metadataMaintenanceNote"
 		select="'This metadata record has been processed by the iso-19115-to-usgin-19115-data XSLT to ensure that all mandatory content for USGIN profile has been added.'"/>
-	<!-- for lower-casing in XSLT 1.0 -->
+		<!-- All to lower case -->
 	<xsl:variable name="lowercase" select="'abcdefghijklmnopqrstuvwxyz'"/>
 	<xsl:variable name="uppercase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'"/>
 	<xsl:variable name="USGIN-resourceTypes"
 		select="'|collection|collection:dataset|collection:dataset:catalog|collection:physical artifact collection|document|document:image|document:image:stillimage|document:image:stillimage:human-generated image|document:image:stillimage:human-generated image:map|document:image:stillimage:photograph|document:image:stillimage:remote sensing earth image|document:image:moving image|document:sound|document:text|document:text:hypertext document|event|event:project|model|physical artifact|service|software|software:stand-alone-application|software:interactive resource|structured digital data item|sampling point|'"/>
 
 
-	<!-- start main processing chain
-    <xsl:template match="/">
-        <xsl:call-template name="main"/>
-    </xsl:template>   -->
+	<!-- start main processing chain for XSLT -->
 	<xsl:template match="gmd:MD_Metadata | gmi:MI_Metadata">
 		<xsl:variable name="var_InputRootNode" select="."/>
 		<xsl:variable name="var_TitleString"
@@ -56,7 +44,7 @@
 			xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gml="http://www.opengis.net/gml"
 			xmlns:xlink="http://www.w3.org/1999/xlink"
 			xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-			<!-- exclude-result-prefixes="gco csw xs xsi xsl usgin csw" -->
+		
 			<gmd:fileIdentifier>
 				<gco:CharacterString>
 					<xsl:choose>
@@ -87,7 +75,6 @@
 					</gmd:language>
 				</xsl:otherwise>
 			</xsl:choose>
-
 			<xsl:choose>
 				<xsl:when test="$var_InputRootNode/gmd:characterSet">
 					<xsl:apply-templates select="$var_InputRootNode/gmd:characterSet"
@@ -103,15 +90,13 @@
 					</gmd:characterSet>
 				</xsl:otherwise>
 			</xsl:choose>
-
 			<xsl:choose>
-
 				<xsl:when test="$var_InputRootNode/gmd:hierarchyLevel">
 					<xsl:apply-templates select="$var_InputRootNode/gmd:hierarchyLevel"
 						mode="no-namespaces"/>
 				</xsl:when>
 				<xsl:otherwise>
-					<!-- hierarchyLevel defaults to dataset; this is pretty useless... -->
+					<!-- hierarchyLevel defaults to dataset-->
 					<gmd:hierarchyLevel>
 						<xsl:comment>no hierarchyLevel in source metadata, USGIN XSLT inserted default value</xsl:comment>
 						<gmd:MD_ScopeCode
@@ -121,10 +106,9 @@
 				</xsl:otherwise>
 			</xsl:choose>
 
-			<!-- the logic here is complicated by handler for keywords in imported metadata that have resource category encoded in a keyword with 
+			<!-- Logic by handler for keywords in imported metadata that have resource category encoded in a keyword with 
 			the prefix usginres:. These use the USGIN resource category hierarchy outlined in the USGIN metadata profile. -->
 
-			<!-- first test if the hierarchyLevelName is one of the valid values -->
 			<xsl:variable name="flag_hlnIsGood">
 				<xsl:for-each select="./gmd:hierarchyLevelName">
 					<xsl:if
@@ -217,13 +201,9 @@
 							</gmd:hierarchyLevelName>
 						</xsl:otherwise>
 					</xsl:choose>
-					<!-- handler for getting hLN from keyword, or guessing, or taking whats already there, or nil/missing -->
+				
 				</xsl:otherwise>
 			</xsl:choose>
-			<!-- is there a good hierarchyLevelName already -->
-
-			<!--        <xsl:apply-templates select="$var_InputRootNode/gmd:contact"/>  -->
-			<!--use for multiple contact-->
 			<xsl:for-each select="$var_InputRootNode/gmd:contact">
 			<!-- changing all role codes/contacts info -->
 				<gmd:contact>
@@ -293,7 +273,6 @@
 					</xsl:choose>
 				</gco:CharacterString>
 			</gmd:dataSetURI>
-			<!-- <xsl:copy-of select="$var_InputRootNode/gmd:locale"/>-->
 			<xsl:apply-templates select="$var_InputRootNode/gmd:locale" mode="no-namespaces"/>
 
 			<xsl:apply-templates select="$var_InputRootNode/gmd:spatialRepresentationInfo"
@@ -301,7 +280,7 @@
 
 			<xsl:apply-templates select="$var_InputRootNode/gmd:referenceSystemInfo"
 				mode="no-namespaces"/>
-			<!-- there may be multiple identificationInfo elements. Several metadata profiles put service distribution
+			<!-- There may be multiple identificationInfo elements. Several metadata profiles put service distribution
                 information in sv_serviceIdentification elements in the same records as MD_DataIdentification
               The USGIN profile used MD_DataIdentification and puts service-based distribution information in 
               the distributionInformation section.  If there are multiple MD_DataIdentification elements, only
@@ -326,21 +305,8 @@
 				</xsl:call-template>
 			</xsl:for-each>
 			<!-- end distribution handler-->
-
-			<!--   <xsl:copy-of select="$var_InputRootNode/gmd:dataQualityInfo"/>
-			
-			  <gmd:dataQualityInfo>
-    			<gmd:DQ_DataQuality>
-     				 <gmd:scope>
-     				 <gmd:report>  0.. many reports allowed; 19115-2 adds classes
-     				 	gmi adds QE_Usability as suptyep of DQ_element, and QE_CoverageResult as subtype of DQ_Result
-     				 <gmd:lineage> 0..1 lineage allowed; 19115-2 adds classes
-     				 	<gmd:LI_Lineage> or gmi:LE_Lineage>
-     				 		<gmd:processStep>
-     				 		<gmd:source>  0..many sources; sources have extents, which need 
-     				 							time instant to position conversion	-->
 			<!-- handle 19115-2 elements in data quality section... -->
-			<!-- first check if there is a dataquality section and make that the context node to keep paths shorter -->
+			<!-- check if there is a dataquality section and make that the context node to keep paths shorter -->
 			<xsl:for-each select="$var_InputRootNode/gmd:dataQualityInfo/gmd:DQ_DataQuality">
 				<gmd:dataQualityInfo>
 					<gmd:DQ_DataQuality>
@@ -390,7 +356,7 @@
 						</xsl:for-each>
 						<!-- end for each report -->
 
-						<!-- finally handle the lineage -->
+						<!-- handle the lineage -->
 						<gmd:lineage>
 							<gmd:LI_Lineage>
 								<xsl:if test="gmd:lineage/gmd:LI_Lineage/gmd:statement">
@@ -407,13 +373,13 @@
 										<xsl:choose>
 											<xsl:when test="gmi:LE_ProcessStep">
 												<gmd:LI_ProcessStep>
-												<!-- first get the gmd content -->
-												<!-- now copy the gmi stuff as key value pairs into a variable-->
+												<!-- get the gmd content -->
+												<!-- copy the gmi items as key value pairs into a variable-->
 												<xsl:variable name="gmiProcessStepStuff">
 												<!-- pick up all the sibling elements after gmd:Processor -->
 												<xsl:for-each
 												select="./gmi:LE_ProcessStep/gmd:description/following-sibling::node()">
-												<!-- kludge because have 3 optional properties after required
+												<!--  3 optional properties after required
 													description that are in gmd namespace...-->
 												<xsl:if
 												test="string-length(local-name())>0
@@ -463,8 +429,8 @@
 									</gmd:processStep>
 								</xsl:for-each>
 								<!-- processStep -->
-								<!-- now do the sources, they have an extent that might be temporal 
-						also need to handle gmi:LE_source...-->
+								<!--sources have an extent that might be temporal 
+						also handle gmi:LE_source...-->
 								<xsl:for-each
 									select="gmd:lineage/gmd:LI_Lineage/gmd:source/gmi:LE_Source
 									| gmd:lineage/gmd:LI_Lineage/gmd:source/gmd:LI_Source">
@@ -562,25 +528,23 @@
 							</gmd:maintenanceAndUpdateFrequency>
 						</xsl:otherwise>
 					</xsl:choose>
-					<!--<xsl:copy-of select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:dateOfNextUpdate"/>-->
+				
 					<xsl:apply-templates
 						select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:dateOfNextUpdate"
 						mode="no-namespaces"/>
-					<!-- <xsl:copy-of select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:userDefinedMaintenanceFrequency"/>-->
+				
 					<xsl:apply-templates
 						select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:userDefinedMaintenanceFrequency"
 						mode="no-namespaces"/>
-					<!-- <xsl:copy-of
-                        select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:updateScope"/>-->
+
 					<xsl:apply-templates
 						select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:updateScope"
 						mode="no-namespaces"/>
-					<!--  <xsl:copy-of
-                        select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:updateScopeDescription"/>-->
+					
 					<xsl:apply-templates
 						select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:updateScopeDescription"
 						mode="no-namespaces"/>
-					<!--<xsl:copy-of select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:maintenanceNote"/>-->
+			
 					<xsl:apply-templates
 						select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:maintenanceNote"
 						mode="no-namespaces"/>
@@ -591,19 +555,19 @@
 								select="concat($metadataMaintenanceNote, '2013-11-04T12:00:00')"/>
 						</gco:CharacterString>
 					</gmd:maintenanceNote>
-					<!--  <xsl:copy-of
-                        select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:contact"
-                    />-->
+					
 					<xsl:apply-templates
 						select="$var_InputRootNode/gmd:metadataMaintenance/gmd:MD_MaintenanceInformation/gmd:contact"
 						mode="no-namespaces"/>
 				</gmd:MD_MaintenanceInformation>
 			</gmd:metadataMaintenance>
-			<!--            </xsl:for-each>  -->
+		    
 		</gmd:MD_Metadata>
 	</xsl:template>
-	<!-- Templates Start Here -->
-
+	
+	
+	
+	<!-- Templates For Processing -->
 	<!--- contact information CI_ResponsibleParty handler -->
 	<xsl:template name="usgin:ResponsibleParty">
 		<!-- parameter should be a CI_ResponsibleParty node -->
@@ -686,10 +650,6 @@
 									</xsl:otherwise>
 								</xsl:choose>
 								<!-- if there is a voice phone -->
-								<!-- copy any fax numbers -->
-								<!-- <xsl:copy-of
-                                select="$inputParty/gmd:contactInfo/gmd:CI_Contact/gmd:phone/gmd:CI_Telephone/gmd:facsimile"
-                            />-->
 								<xsl:apply-templates
 									select="$inputParty/gmd:contactInfo/gmd:CI_Contact/gmd:phone/gmd:CI_Telephone/gmd:facsimile"
 									mode="no-namespaces"/>
@@ -890,7 +850,7 @@
 						</gmd:EX_Extent>
 					</gmd:extent>
 				</xsl:for-each>
-				<!-- end of for-each extent -->
+				
 				<xsl:apply-templates select="$inputInfo/gmd:supplementalInformation"
 					mode="no-namespaces"/>
 			</gmd:MD_DataIdentification>
@@ -925,12 +885,11 @@
 					</gmd:dateType>
 				</gmd:CI_Date>
 			</gmd:date>
-			<!-- <xsl:copy-of select="$inputCit/gmd:edition"/>-->
+		
 			<xsl:apply-templates select="$inputCit/gmd:edition" mode="no-namespaces"/>
-			<!-- <xsl:copy-of
-                            select="$inputCit/gmd:editionDate"/>-->
+		
 			<xsl:apply-templates select="$inputCit/gmd:editionDate" mode="no-namespaces"/>
-			<!--   handler for identifiers with possible gmx elements... this is to handle NGCD usage of anchor -->
+			<!--   handler for identifiers, handle NGCD usage of anchor -->
 			<xsl:for-each select="$inputCit/gmd:identifier">
 				<xsl:choose>
 					<xsl:when test="gmd:MD_Identifier/gmd:code/gmx:Anchor">
@@ -975,8 +934,6 @@
 					</xsl:otherwise>
 				</xsl:choose>
 			</xsl:for-each>
-
-			<!---Responsible Party may not be included in Repo output, yet It is required for USGIN validation.-->
 			<!-- for each statement allows more than one contact to be processed -->
 			<xsl:choose>
 				<xsl:when test="$inputCit/gmd:citedResponsibleParty">
@@ -1029,7 +986,6 @@
 			<xsl:apply-templates select="$inputCit/gmd:ISBN" mode="no-namespaces"/>
 			<xsl:apply-templates select="$inputCit/gmd:ISSN" mode="no-namespaces"/>
 		</gmd:CI_Citation>
-
 	</xsl:template>
 	<!-- end of citation handler -->
 
@@ -1114,9 +1070,7 @@
 				<xsl:with-param name="thetempelem" select="."/>
 				<xsl:with-param name="gmlid" select="concat('a',string(generate-id()))"/>
 			</xsl:call-template>
-			<!-- do this with a template because its a mess, and we want it to be reusable -->
 		</xsl:for-each>
-		<!-- gmd:minvalue maxvalue are required; might need to put logic in to test that....-->
 		<xsl:apply-templates select="$inputExtent/gmd:verticalElement" mode="no-namespaces"/>
 		<!-- vertical element -->
 
@@ -1133,7 +1087,7 @@
 			<!-- logic:
 			if have MI_ImageDescription or MD_ImageDescription, copy all the attributes except 'dimension' to MD_ImageDescription -->
 			<!-- if have MD_CoverageDescription or MI_CoverageDescription, then copy attributes except 'dimension' to MD_ImageDescription;
-				the text from MI_RangeElementDescription will be lost; would have to append to the abstract? -->
+				the text from MI_RangeElementDescription will be lost; would have to append to the abstract -->
 			<!-- for dimension properties, copy MI_Band content, if present, into the MD_RangeDimension/descriptor string -->
 
 			<xsl:choose>
@@ -1446,7 +1400,7 @@
 			</xsl:when>
 			<xsl:when test="$inputDate/gco:DateTime">
 				<xsl:choose>
-					<!-- Leah please fix these tests should be string-length(normalize-space(string($inputDate/gco:DateTime))) -->
+					
 					<xsl:when
 						test="string-length(normalize-space(string($inputDate/gco:DateTime))) &gt; 17">
 						<xsl:value-of select="$inputDate/gco:DateTime"/>
@@ -1483,16 +1437,15 @@
 	<xsl:template name="usgin:temporalElement">
 		<xsl:param name="thetempelem"/>
 		<xsl:param name="gmlid"/>
-		<!-- have to process possible incoming TimeInstant or TimePeriod-->
+		<!-- process possible incoming TimeInstant or TimePeriod-->
 		<!-- if its a TimeInstant, copy the gml:timePosition into gml:beginPosition and gml:endPosition
     of the gml:TimePeriod
-    Also have to make sure that TimePeriod has a gml:id -->
+    Also make sure that TimePeriod has a gml:id -->
 		<gmd:temporalElement>
-			<!-- note that a gmd:EX_SpatialTemporalExtent might show up here; we're just going to
-                pull the temporal part of that here-->
+			<!-- note that a gmd:EX_SpatialTemporalExtent might show up here-->
 			<gmd:EX_TemporalExtent>
 				<!-- temporal extent could be a gemetric primitive (TimeInstant or TimePeriod
-                    or a topologic primitive (TimeNote or TimeEdge); we're not handling topologic time -->
+                    or a topologic primitive (TimeNote or TimeEdge)-->
 				<xsl:choose>
 					<!-- local-name references to get around gml version problems (3 vs 3.2) -->
 					<xsl:when
@@ -1500,7 +1453,7 @@
 						<gmd:extent>
 							<gml:TimePeriod>
 								<xsl:choose>
-									<!-- take care of the gml:id, use existing in the data if there is one.. use local-name trick to get around gml 3.0 vs 3.2 namespace problems -->
+									<!-- take care of the gml:id, use existing in the data if there is one.. use local-name -->
 									<xsl:when
 										test="gmd:EX_TemporalExtent/gmd:extent/child::node()[local-name()='TimePeriod']/@*">
 										<xsl:attribute name="gml:id">
