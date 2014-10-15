@@ -1,0 +1,4 @@
+/var/lib/tomcat7/webapps/geothermal/WEB-INF/classes/gpt/metadata/iso {USGIN FOLDER}
+
+
+/var/lib/tomcat7/webapps/geothermal/WEB-INF/classes/gpt/metadata {Schemas/xml file}
