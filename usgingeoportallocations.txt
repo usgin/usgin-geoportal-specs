@@ -2,3 +2,15 @@
 
 
 /var/lib/tomcat7/webapps/geothermal/WEB-INF/classes/gpt/metadata {Schemas/xml file}
+
+
+
+add this schema label resource key to gpt.properties file
+\WEB-INF\classes\gpt\resources\gpt.properties
+
+
+
+
+
+# Label resource key for USGIN editor
+catalog.mdParam.schema.usgin.iso19115
