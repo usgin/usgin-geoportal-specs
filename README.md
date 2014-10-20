@@ -47,8 +47,11 @@ Open the schemas.xml file in an editor and add the USGIN defintion files between
 #### STEP 03: Adding Properties into the gpt.properties File
 
 Navigate to the _gpt/resources_ directory in the Geoportal-Server
+
 Open the gpt.properties file in a text editor and scroll to bottom of page
+
 Add in properties needed for USGIN 19115 profile:
+
 ```
 # Label resource key for USGIN editor
 catalog.mdParam.schema.usgin.iso19115
