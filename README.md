@@ -9,15 +9,19 @@ After the geoportal has been successfuly setup and is running, you are ready to 
 
 ###Getting USGIN 19115 Set Up
 
-Navigate to the /webapps/geoportalName/WEB-INF/classes/gpt/metadata/iso directory in the geoportal-server
+#### STEP 01: Adding The USGIN Folder to the Geoportal-Server
 
-Move the usgin folder, available through this package, and place it into the metadata/iso directory in the geoportal-server.
+Navigate to the _/webapps/geoportalName/WEB-INF/classes/gpt/metadata/iso_ directory in the geoportal-server
 
-Navigate back to the gpt/metadata directory in the geoportal-server
+Move the usgin folder, available through this package, and place it into the _gpt/metadata/iso_ directory in the geoportal-server.
+
+#### STEP 02: Adding Definition Files to the Schemas.xml File
+
+Navigate back to the _gpt/metadata_ directory in the geoportal-server
 
 Open the schemas.xml file in an editor and add the USGIN defintion files between the open and closed <schemas></schemas> elements:
 
-'''
+```
 <schemas>
 
 	<!-- The first definition file tests to determine if the input record has been processed by the
@@ -35,7 +39,18 @@ Open the schemas.xml file in an editor and add the USGIN defintion files between
 
 </schemas>
    
-'''
+```
 
 
-In order for the USGIN 19115 profile to work thorouly on all ISO metadata it should replace the ISO 19115 and ISO 19115-2 profiles in the geoportal-server. Remove the ISO 19115 and ISO 19115-2 definitions from the schemas file, and place the USGIN ISO 19115 definitions at the beginning of the file after the first <schemas> element. If an example is needed, review the schemas.xml file that comes with this package. All definition files do not, and should not be removed.
+*NOTE:* In order for the USGIN 19115 profile to work thorouly on all ISO metadata it should replace the ISO 19115 and ISO 19115-2 profiles in the geoportal-server. Remove the ISO 19115 and ISO 19115-2 definitions from the schemas file, and place the USGIN ISO 19115 definitions at the beginning of the file after the first <schemas> element. If an example is needed, review the schemas.xml file that comes with this package. All definition files do not, and should not be removed.
+
+#### STEP 03: Adding Properties into the gpt.properties File
+
+Navigate to the _gpt/resources_ directory in the Geoportal-Server
+Open the gpt.properties file in a text editor and scroll to bottom of page
+Add in properties needed for USGIN 19115 profile:
+```
+# Label resource key for USGIN editor
+catalog.mdParam.schema.usgin.iso19115
+```
+#### STEP 04: Save everything and restart tomcat
