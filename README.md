@@ -5,7 +5,7 @@ USGIN Geoportal-Server Documents and Files for packaging.
 
 ##The USGIN ISO 19115 Profile for Geoportal-Server
 
-After the geoportal has been successfuly setup and is running, you are ready to add new profiles. The items available through this package (repository) are the USGIN 19115 profile, and the CSDGM FGDC to ISO 19115 XSLT.
+After the geoportal has been successfully setup and is running, you are ready to add new profiles. The items available through this package (repository) are the USGIN 19115 profile, and the CSDGM FGDC to ISO 19115 XSLT.
 
 ###Getting USGIN 19115 Set Up
 
@@ -19,7 +19,7 @@ Move the usgin folder, available through this package, and place it into the _gp
 
 Navigate back to the _gpt/metadata_ directory in the geoportal-server
 
-Open the schemas.xml file in an editor and add the USGIN defintion files between the open and closed <schemas></schemas> elements:
+Open the schemas.xml file in an editor and add the USGIN definition files between the open and closed <schemas></schemas> elements:
 
 ```
 <schemas>
@@ -42,7 +42,7 @@ Open the schemas.xml file in an editor and add the USGIN defintion files between
 ```
 
 
-*NOTE:* In order for the USGIN 19115 profile to work thorouly on all ISO metadata it should replace the ISO 19115 and ISO 19115-2 profiles in the geoportal-server. Remove the ISO 19115 and ISO 19115-2 definitions from the schemas file, and place the USGIN ISO 19115 definitions at the beginning of the file after the first <schemas> element. If an example is needed, review the schemas.xml file that comes with this package. All definition files do not, and should not be removed.
+*NOTE:* In order for the USGIN 19115 profile to work thoroughly on all ISO metadata it should replace the ISO 19115 and ISO 19115-2 profiles in the geoportal-server. Remove the ISO 19115 and ISO 19115-2 definitions from the schemas file, and place the USGIN ISO 19115 definitions at the beginning of the file after the first <schemas> element. If an example is needed, review the schemas.xml file that comes with this package. All definition files do not, and should not be removed.
 
 #### STEP 03: Adding Properties into the gpt.properties File
 
