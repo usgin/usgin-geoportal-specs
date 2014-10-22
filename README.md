@@ -54,7 +54,7 @@ Add in properties needed for USGIN 19115 profile:
 
 ```
 # Label resource key for USGIN editor
-catalog.mdParam.schema.usgin.iso19115
+catalog.mdParam.schema.usgin.iso19115 = USGIN-ISO 19115 Profile
 ```
 #### STEP 04: Save Everything and Restart Servlet/Tomcat
 
