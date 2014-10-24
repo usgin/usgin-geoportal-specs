@@ -59,3 +59,13 @@ catalog.mdParam.schema.usgin.iso19115 = USGIN-ISO 19115 Profile
 #### STEP 04: Save Everything and Restart Servlet/Tomcat
 
 After the servlet has been restarted, test out the USGIN Profile to see if it works.
+
+### Adding the FGDC to USGIN-ISO 19115 XSLT
+Provided in this package (repository) is an fgdc directory that contains the XSLT and Definition file for FGDC to USGIN-ISO 19115. 
+
+#### STEP 01: Add Files from the FGDC Directory into the Geoportal-Server
+
+Navigate to the _\gpt\metadata\fgdc_ directory within the Geoportal-Server and place the fgdc-to-USGIN19115-definition.xml and csdgm-to-iso19115_USGIN.xslt files in.
+
+#### STEP 02: 
+
