@@ -67,5 +67,11 @@ Provided in this package (repository) is an fgdc directory that contains the XSL
 
 Navigate to the _\gpt\metadata\fgdc_ directory within the Geoportal-Server and place the fgdc-to-USGIN19115-definition.xml and csdgm-to-iso19115_USGIN.xslt files in.
 
-#### STEP 02: 
+#### STEP 02: Addinng the FGDC Definition File to the Geoportal-Server
+
+Navigate to the _gpt\metadata_ directory within the Geoportal-Sever, and open the Schemas.xml file
+Add in the following between the open and closed schema elements:
+```
+<schema fileName="gpt/metadata/iso/fdgc-iso/fgdc-to-USGIN19115-definition.xml"/>
+```
 
