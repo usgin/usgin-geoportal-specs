@@ -16,9 +16,10 @@
   
  
    <!-- schema interrogation -->
-   <!-- make interrogation catch a gmd:MD_Metadata anywhere in the interrogated document
-   to catch CSW and OAI-PMH harvest responses-->
-  <interrogation count="count(//gmd:MD_Metadata)"
+   <!-- make interrogation catch a gmd:MD_Metadata or gmi:MI_Metadata anywhere in the
+     interrogated document to catch CSW and OAI-PMH harvest responses.
+      The transform converts gmi:MI_Metadta into gmd:MD_Metadata. -->
+  <interrogation count="count(//gmd:MD_Metadata) + count(//gmi:MI_Metadata)"
   toKnownSchemaXslt="gpt/metadata/iso/usgin/iso-19115-to-usgin-19115-data.xslt"/>
 </schema>
 </schemas>

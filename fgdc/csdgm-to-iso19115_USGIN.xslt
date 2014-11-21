@@ -42,7 +42,9 @@
 							 was repeated. Cell Geometry Code information was also added.
 SMR 2012-01-27 comment out gmd:extendedElementInformation
 SMR 2012-01-28 edit xslt to make it more intelligible and maintainable. Give variables more 
-							reasonable names, remove spurious type casting, add comments						 
+							reasonable names, remove spurious type casting, add comments	
+SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metadata, FGDC-STD-012-2002
+							To Do- add tests to recognize and handle remote sensing extensions.
 -->
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gfc="http://www.isotc211.org/2005/gfc" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:gsr="http://www.isotc211.org/2005/gsr" xmlns:gss="http://www.isotc211.org/2005/gss" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vmf="http://www.altova.com/MapForce/UDF/vmf" xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:grp="http://www.altova.com/Mapforce/grouping" xmlns:usgin="http://resources.usgin.org/xslt/FGDC2ISO" exclude-result-prefixes="fn grp vmf xs xsi xsl" xmlns="http://www.opengis.net/gml">
 	<!-- ********************** templates by SMR   **************************** -->

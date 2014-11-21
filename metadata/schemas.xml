@@ -16,16 +16,21 @@
 -->
 <schemas>
 <!-- the first definition file tests to determine if the input record has been processed by the
-ISO to USGIN ISO xslt transform; it it has, it is processed by the definition file.  All validation criteria
-have been removed from the validation, the assumption being that once processed by the xslt, it is a valid
-usgin-profile record-->
+ISO to USGIN ISO xslt transform; if it has, it is processed by the definition file to map content
+to the search indexes..  All validation criteria have been removed from the definition file, the 
+assumption being that once processed by the xslt, it is a valid usgin-profile record-->
    <schema fileName="gpt/metadata/iso/usgin/USGIN-ISO19115Definition.xml"/>
-
+<!-- this definition captures any metadata containing a gmd:MD_Metadata or gmi:MI_Metadata element -->
    <schema fileName="gpt/metadata/iso/usgin/ISO-to-USGIN-19115-data-definition.xml"/>
-
-
-   <schema fileName="gpt/metadata/dc/dc-definition.xml"/>
-  <schema fileName="gpt/metadata/ogc/ogc-definition.xml"/> 
-  <schema fileName="gpt/metadata/ogc/cswRecord-definition.xml"/>
-  <schema fileName="gpt/metadata/other/opensearch-definition.xml"/>   
+    
+ <!-- uncomment next line to import FGDC CSDGM FGDC-STD-001-1998 XML metadata by transforming
+            to USGIN conformant ISO19139 XML.
+          This definition file will also process Content Standard for Digital Geospatial Metadata: Extensions 
+            for Remote Sensing Metadata  FGDC-STD-012-2002, but does not capture the extended elements.-->
+<!--    <schema fileName="gpt/metadata/iso/usgin/fgdc-to-USGIN19115-definition.xml"/>  -->
+    
+        <!-- dc-definition will import csw:records with dublin-core content into the catalog. Not USGIN conformant-->  
+<!--   <schema fileName="gpt/metadata/dc/dc-definition.xml"/> -->
+        <!-- ogc-definition transforms getCapabilities docs to csw:record, not USGIN conformant -->
+<!--  <schema fileName="gpt/metadata/ogc/ogc-definition.xml"/>    -->
 </schemas>
