@@ -2790,7 +2790,7 @@ Overview_Description: <xsl:for-each select="eaover">
 							</xsl:for-each>
 							<!-- handle Keywords, grouped by theme with a thesaurus element for each theme -->
 							<!-- if ...kt (keyword thesaurus) is missing, fgdc xml should be invalid, but in real world... -->
-							<xsl:choose>
+			<!--				<xsl:choose>
 								<xsl:when test="fn:exists(keywords/theme/themekt)">
 									<xsl:for-each-group select="keywords/theme" group-by="(if (fn:contains(xs:string(themekt), 'ISO 19115')) then () else xs:string(themekt))">
 										<xsl:variable name="var352_cur_result_groupby" as="item()+" select="current-group()"/>
@@ -2804,29 +2804,13 @@ Overview_Description: <xsl:for-each select="eaover">
 														</gco:CharacterString>
 													</gmd:keyword>
 												</xsl:for-each>
-												<gmd:type>
-													<gmd:MD_KeywordTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme" codeSpace="005">
-														<xsl:value-of select="'theme'"/>
-													</gmd:MD_KeywordTypeCode>
-												</gmd:type>
-												<gmd:thesaurusName>
-													<gmd:CI_Citation>
-														<gmd:title>
-															<gco:CharacterString>
-																<xsl:value-of select="fn:normalize-space($var353_cur_result_groupby)"/>
-															</gco:CharacterString>
-														</gmd:title>
-														<gmd:date>
-															<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
-														</gmd:date>
-													</gmd:CI_Citation>
-												</gmd:thesaurusName>
+
 											</gmd:MD_Keywords>
 										</gmd:descriptiveKeywords>
 									</xsl:for-each-group>
 								</xsl:when>
-								<!-- thesaurus name is missing... -->
-								<xsl:otherwise>
+								<!-\- thesaurus name is missing... -\->
+								<xsl:otherwise>-->
 									<xsl:for-each select="keywords/theme">
 										<gmd:descriptiveKeywords>
 											<gmd:MD_Keywords>
@@ -2842,14 +2826,30 @@ Overview_Description: <xsl:for-each select="eaover">
 														<xsl:value-of select="'theme'"/>
 													</gmd:MD_KeywordTypeCode>
 												</gmd:type>
-												<gmd:thesaurusName gco:nilReason="missing"/>
+												<xsl:choose>
+													<xsl:when test="fn:exists(themekt)">						
+														<gmd:thesaurusName>
+															<gmd:CI_Citation>
+																<gmd:title>
+																	<gco:CharacterString>
+																		<xsl:value-of select="fn:normalize-space(themekt)"/>
+																	</gco:CharacterString>
+																</gmd:title>
+																<gmd:date>
+																	<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
+																</gmd:date>
+															</gmd:CI_Citation>
+														</gmd:thesaurusName> </xsl:when>
+													<xsl:otherwise><gmd:thesaurusName gco:nilReason="missing"/></xsl:otherwise>
+												</xsl:choose>
+												
 											</gmd:MD_Keywords>
 										</gmd:descriptiveKeywords>
 									</xsl:for-each>
-								</xsl:otherwise>
-							</xsl:choose>
+								<!--</xsl:otherwise>-->
+							<!--</xsl:choose>-->
 							<!-- place keywords -->
-							<xsl:choose>
+							<!--<xsl:choose>
 								<xsl:when test="fn:exists(keywords/place/placekt)">
 									<xsl:for-each-group select="keywords/place" group-by="xs:string(xs:string(placekt))">
 										<xsl:variable name="var_placeKeywordList" as="item()+" select="current-group()"/>
@@ -2868,24 +2868,13 @@ Overview_Description: <xsl:for-each select="eaover">
 														<xsl:value-of select="'place'"/>
 													</gmd:MD_KeywordTypeCode>
 												</gmd:type>
-												<gmd:thesaurusName>
-													<gmd:CI_Citation>
-														<gmd:title>
-															<gco:CharacterString>
-																<xsl:value-of select="fn:normalize-space($var_placeGroupKeyValue)"/>
-															</gco:CharacterString>
-														</gmd:title>
-														<gmd:date>
-															<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
-														</gmd:date>
-													</gmd:CI_Citation>
-												</gmd:thesaurusName>
+
 											</gmd:MD_Keywords>
 										</gmd:descriptiveKeywords>
 									</xsl:for-each-group>
 								</xsl:when>
 								<xsl:otherwise>
-									<!-- no thesaurus -->
+									<!-\- no thesaurus -\->-->
 									<xsl:for-each select="keywords/place">
 										<gmd:descriptiveKeywords>
 											<gmd:MD_Keywords>
@@ -2901,12 +2890,27 @@ Overview_Description: <xsl:for-each select="eaover">
 														<xsl:value-of select="'place'"/>
 													</gmd:MD_KeywordTypeCode>
 												</gmd:type>
-												<gmd:thesaurusName gco:nilReason="missing"/>
+												<xsl:choose>
+													<xsl:when test="fn:exists(placekt)">												<gmd:thesaurusName>
+														<gmd:CI_Citation>
+															<gmd:title>
+																<gco:CharacterString>
+																	<xsl:value-of select="fn:normalize-space(placekt)"/>
+																</gco:CharacterString>
+															</gmd:title>
+															<gmd:date>
+																<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
+															</gmd:date>
+														</gmd:CI_Citation>
+													</gmd:thesaurusName></xsl:when>
+													<xsl:otherwise><gmd:thesaurusName gco:nilReason="missing"/></xsl:otherwise>
+												</xsl:choose>
+												
 											</gmd:MD_Keywords>
 										</gmd:descriptiveKeywords>
 									</xsl:for-each>
-								</xsl:otherwise>
-							</xsl:choose>
+							<!--	</xsl:otherwise>
+							</xsl:choose>-->
 							<!-- stratum keywords -->
 							<!-- alternate logic for thesaurus name -->
 							<!--xsl:for-each-group select="keywords/stratum" group-by="xs:string(xs:string(stratkt))">
@@ -2949,7 +2953,7 @@ Overview_Description: <xsl:for-each select="eaover">
 									</gmd:MD_Keywords>
 								</gmd:descriptiveKeywords>
 							</xsl:for-each>
-							<xsl:if test="fn:string-length(xs:string(keywords/temporal[1]/tempkey[1]))>0">
+	<!--						<xsl:if test="fn:string-length(xs:string(keywords/temporal[1]/tempkey[1]))>0">-->
 								<xsl:for-each select="keywords/temporal">
 									<!--xsl:variable name="var370_cur_result_groupby" as="item()+" select="current-group()"/>
 								<xsl:variable name="var371_cur_result_groupby"  select="current-grouping-key()"/ -->
@@ -2989,7 +2993,7 @@ Overview_Description: <xsl:for-each select="eaover">
 										</gmd:MD_Keywords>
 									</gmd:descriptiveKeywords>
 								</xsl:for-each>
-							</xsl:if>
+							<!--</xsl:if>-->
 							<!-- resource constraints section, distribution liability, access constraint, and use constraints get concatenated into a single gmd:useConstraint 
 								text blob -->
 							<xsl:variable name="var_distributionLiability_exists" >
@@ -3045,7 +3049,7 @@ Overview_Description: <xsl:for-each select="eaover">
 											<xsl:if test="fn:exists($var388_result_securityClassType)">
 												<gmd:MD_ClassificationCode>
 													<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ClassificationCode'))"/></xsl:attribute>
-													<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI($var385_cond_result_exists))"/></xsl:attribute>
+													<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string($var388_result_securityClassType)"/></xsl:attribute>
 													<xsl:variable name="var387_result_securityClassCode" >
 														<xsl:call-template name="vmf:securityClassCode">
 															<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(xs:string(secclass))))"/>
@@ -3053,9 +3057,9 @@ Overview_Description: <xsl:for-each select="eaover">
 													</xsl:variable>
 <!--													<xsl:variable name="var386_cond_result_exists"  select="(if (fn:exists($var387_result_securityClassCode)) then $var387_result_securityClassCode else ())"/>-->
 													<xsl:if test="fn:exists($var387_result_securityClassCode)">
-														<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI($var386_cond_result_exists))"/></xsl:attribute>
+														<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string($var387_result_securityClassCode)"/></xsl:attribute>
 													</xsl:if>
-													<xsl:value-of select="$var385_cond_result_exists"/>
+													<xsl:value-of select="$var388_result_securityClassType"/>
 												</gmd:MD_ClassificationCode>
 											</xsl:if>
 										</gmd:classification>
@@ -3389,10 +3393,10 @@ Overview_Description: <xsl:for-each select="eaover">
 														</xsl:variable>
 														<xsl:for-each select="$var740_cond_result_exists">
 															<gmd:CI_PresentationFormCode>
-																<xsl:variable name="var743_cond_result_exists"  select="(if (fn:exists($var693_crossref/citeinfo/geoform)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode' else ())"/>
-																<xsl:if test="fn:exists($var743_cond_result_exists)">
-																	<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI($var743_cond_result_exists))"/></xsl:attribute>
-																</xsl:if>
+																<!--<xsl:variable name="var743_cond_result_exists"  select="(if (fn:exists($var693_crossref/citeinfo/geoform)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode' else ())"/>-->
+																<!--<xsl:if test="fn:exists($var743_cond_result_exists)">-->
+																	<xsl:attribute name="codeList"><xsl:value-of select="xs:string('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode')"/></xsl:attribute>
+																<!--</xsl:if>-->
 																<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
 																<xsl:variable name="var744_cond_result_exists" >
 																	<xsl:if test="fn:exists($var693_crossref/citeinfo/geoform)">
@@ -3449,7 +3453,16 @@ Overview_Description: <xsl:for-each select="eaover">
 											</gmd:aggregateDataSetName>
 											<!-- /xsl:for-each -->
 											<gmd:associationType>
-<!--												<xsl:variable name="var767_cond_result_exists"  select="(if (fn:exists($var_idinfoSourceNode/crossref/citeinfo/origin)) then 'crossReference' else ())"/>-->
+												<xsl:variable name="var767_cond_result_exists">
+													<xsl:choose>
+														<xsl:when test="fn:exists($var_idinfoSourceNode/crossref/citeinfo/origin)"> 
+															<xsl:value-of select="string('crossReference')"/>
+														</xsl:when>
+														<xsl:otherwise>
+															<xsl:value-of select="string('')"/>
+														</xsl:otherwise>
+													</xsl:choose>
+												</xsl:variable>  
 												<xsl:if test="fn:exists($var_idinfoSourceNode/crossref/citeinfo/origin)">
 													<gmd:DS_AssociationTypeCode>
 <!--														<xsl:variable name="var768_cond_result_exists" >
@@ -3573,7 +3586,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 													<xsl:value-of select="string(' Technical Prerequisites: ')"/>
 												</xsl:if>
 											</xsl:variable>  
-											<xsl:value-of select="fn:string(fn:concat('Native Dataset Environment: ', xs:string($var_nativeEnvironmentNode), $var577_cond_result_exists, .)))"/>
+											<xsl:value-of select="fn:string(fn:concat('Native Dataset Environment: ', xs:string($var_nativeEnvironmentNode), $var577_cond_result_exists, .))"/>
 										</gco:CharacterString>
 									</xsl:for-each>
 								</gmd:environmentDescription>
@@ -3895,7 +3908,16 @@ utilitiesCommunication', concat(' ',string(.)))">
 									</xsl:variable>
 									<xsl:for-each select="$var_eainfoEaoverText">
 										<!-- xsl:variable name="var1074_cur_cond_result_exists"  select="."/ -->
-										<xsl:variable name="var_eainfoEadetcitLabel"  select="(if (fn:exists($var_metadataRoot/eainfo/overview/eadetcit)) then '   Entity and Attribute Detail Citation: ' else ())"/>
+										<xsl:variable name="var_eainfoEadetcitLabel">
+											<xsl:choose>
+												<xsl:when test="fn:exists($var_metadataRoot/eainfo/overview/eadetcit)"> 
+													<xsl:value-of select="string('   Entity and Attribute Detail Citation: ')"/>
+												</xsl:when>
+												<xsl:otherwise>
+													<xsl:value-of select="string('')"/>
+												</xsl:otherwise>
+											</xsl:choose>
+									</xsl:variable> 
 										<xsl:if test="fn:exists($var_eainfoEadetcitLabel)">
 											<xsl:variable name="var_eainfoEadetcitText" >
 												<xsl:if test="fn:exists($var_metadataRoot/eainfo/overview/eadetcit)">
@@ -4260,8 +4282,22 @@ utilitiesCommunication', concat(' ',string(.)))">
 								</xsl:for-each>
 							</xsl:variable>
 							<xsl:variable name="var_OnlineName" >
-								<xsl:value-of select="concat((if (fn:exists($var_ResourceIdentifer)) then $var_ResourceIdentifer else 'NoResdesc'),									
-									(if (fn:exists($var_networkResourceName)) then $var_networkResourceName else ' NoNetworkr'))"/>
+								<xsl:choose>
+									<xsl:when test="fn:exists($var_ResourceIdentifer)">
+										<xsl:value-of select="$var_ResourceIdentifer"/>
+									</xsl:when> 
+									<xsl:otherwise> 
+										<xsl:value-of select="string('NoResdesc')"/>
+									</xsl:otherwise>
+								</xsl:choose>
+								<xsl:choose>
+									<xsl:when test="fn:exists($var_networkResourceName)">
+										<xsl:value-of select="concat(' ',string($var_networkResourceName))"/>
+									</xsl:when> 
+									<xsl:otherwise> 
+										<xsl:value-of select="string(' NoNetworkr')"/>
+									</xsl:otherwise>
+								</xsl:choose>
 							</xsl:variable>
 							<xsl:for-each select="$var_metadataRoot/idinfo/citation/citeinfo/onlink">
 								<gmd:onLine>
@@ -4287,126 +4323,38 @@ utilitiesCommunication', concat(' ',string(.)))">
 							</xsl:for-each>
 						</gmd:MD_DigitalTransferOptions>
 					</gmd:transferOptions>
-					<xsl:for-each-group select="$var_metadataRoot/distinfo/stdorder/digform/digtopt/offoptn" group-by="xs:string(offmedia)">
-						<xsl:variable name="var_offlineMediaOptionGroup" as="item()+" select="current-group()"/>
+					<xsl:for-each select="$var_metadataRoot/distinfo/stdorder/digform/digtopt/offoptn" >
 						<gmd:transferOptions>
 							<gmd:MD_DigitalTransferOptions>
 								<gmd:offLine>
 									<gmd:MD_Medium>
 										<gmd:name>
-											<xsl:variable name="var1618_map_result_groupitems" as="xs:string+">
-												<xsl:for-each select="$var_offlineMediaOptionGroup">
-													<xsl:value-of select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
+											<xsl:variable name="var1618_mediaTypes">
+												<xsl:for-each select="offmedia">
+													<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 												</xsl:for-each>
-											</xsl:variable>
-											<xsl:variable name="var1617_map_result_distinctvalues" >
-												<xsl:for-each select="fn:distinct-values($var1618_map_result_groupitems)">
-													<xsl:variable name="var1621_result_mediumType" >
+										</xsl:variable>
+											<xsl:variable name="var1617_map_mediaTypeValues" >
+												<xsl:for-each select="offmedia">
 														<xsl:call-template name="vmf:mediumType">
 															<xsl:with-param name="input" select="fn:upper-case(.)"/>
 														</xsl:call-template>
-													</xsl:variable>
-													<xsl:if test="fn:exists($var1621_result_mediumType)">
-														<xsl:value-of select="$var1621_result_mediumType"/>
-													</xsl:if>
 												</xsl:for-each>
 											</xsl:variable>
-											<xsl:variable name="var1608_cond_result_exists"  select="(if (fn:exists($var1617_map_result_distinctvalues)) then fn:string-join($var1617_map_result_distinctvalues, ' ') else ())"/>
-											<xsl:variable name="var1581_cond_result_exists" >
-												<xsl:if test="$var1608_cond_result_exists">
-													<xsl:variable name="var1611_map_result_groupitems" as="xs:string+">
-														<xsl:for-each select="$var_offlineMediaOptionGroup">
-															<xsl:value-of select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
-														</xsl:for-each>
-													</xsl:variable>
-													<xsl:variable name="var1610_map_result_distinctvalues" >
-														<xsl:for-each select="fn:distinct-values($var1611_map_result_groupitems)">
-															<xsl:variable name="var1614_result_mediumType" >
-																<xsl:call-template name="vmf:mediumType">
-																	<xsl:with-param name="input" select="fn:upper-case(.)"/>
-																</xsl:call-template>
-															</xsl:variable>
-															<xsl:if test="fn:exists($var1614_result_mediumType)">
-																<xsl:value-of select="$var1614_result_mediumType"/>
-															</xsl:if>
-														</xsl:for-each>
-													</xsl:variable>
-													<xsl:if test="fn:exists($var1610_map_result_distinctvalues)">
-														<xsl:value-of select="fn:string-join($var1610_map_result_distinctvalues, ' ')"/>
+											<xsl:variable name="var1581_joinedMappedMediaTypes" >
+												<xsl:if test="fn:exists($var1617_map_mediaTypeValues)">
+													<xsl:value-of select="fn:string-join(var1617_map_mediaTypeValues, ' ')"/>
 													</xsl:if>
-												</xsl:if>
 											</xsl:variable>
-											<xsl:if test="fn:exists($var1581_cond_result_exists)">
+											<xsl:if test="fn:exists($var1581_joinedMappedMediaTypes)">
 												<gmd:MD_MediumNameCode>
-													<xsl:variable name="var1585_map_result_groupitems" as="xs:string+">
-														<xsl:for-each select="$var_offlineMediaOptionGroup">
-															<xsl:value-of select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
-														</xsl:for-each>
-													</xsl:variable>
-													<xsl:variable name="var1584_map_result_distinctvalues" >
-														<xsl:for-each select="fn:distinct-values($var1585_map_result_groupitems)">
-															<xsl:variable name="var1588_result_mediumType" >
-																<xsl:call-template name="vmf:mediumType">
-																	<xsl:with-param name="input" select="fn:upper-case(.)"/>
-																</xsl:call-template>
-															</xsl:variable>
-															<xsl:if test="fn:exists($var1588_result_mediumType)">
-																<xsl:value-of select="$var1588_result_mediumType"/>
-															</xsl:if>
-														</xsl:for-each>
-													</xsl:variable>
-													<xsl:variable name="var1583_cond_result_exists"  select="(if (fn:exists($var1584_map_result_distinctvalues)) then fn:string-join($var1584_map_result_distinctvalues, ' ') else ())"/>
-													<xsl:variable name="var1582_cond_result_exists"  select="(if (fn:exists($var1583_cond_result_exists)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MediumNameCode' else ())"/>
-													<xsl:if test="fn:exists($var1582_cond_result_exists)">
-														<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI($var1582_cond_result_exists))"/></xsl:attribute>
-													</xsl:if>
-													<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI($var1581_cond_result_exists))"/></xsl:attribute>
-													<xsl:variable name="var1602_map_result_groupitems" as="xs:string+">
-														<xsl:for-each select="$var_offlineMediaOptionGroup">
-															<xsl:value-of select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
-														</xsl:for-each>
-													</xsl:variable>
-													<xsl:variable name="var1601_map_result_distinctvalues" >
-														<xsl:for-each select="fn:distinct-values($var1602_map_result_groupitems)">
-															<xsl:variable name="var1605_result_mediumType" >
-																<xsl:call-template name="vmf:mediumType">
-																	<xsl:with-param name="input" select="fn:upper-case(.)"/>
-																</xsl:call-template>
-															</xsl:variable>
-															<xsl:if test="fn:exists($var1605_result_mediumType)">
-																<xsl:value-of select="$var1605_result_mediumType"/>
-															</xsl:if>
-														</xsl:for-each>
-													</xsl:variable>
-													<xsl:variable name="var1592_cond_result_exists"  select="(if (fn:exists($var1601_map_result_distinctvalues)) then fn:string-join($var1601_map_result_distinctvalues, ' ') else ())"/>
-													<xsl:variable name="var1591_cond_result_exists" >
-														<xsl:if test="$var1592_cond_result_exists">
-															<xsl:variable name="var1595_map_result_groupitems" as="xs:string+">
-																<xsl:for-each select="$var_offlineMediaOptionGroup">
-																	<xsl:value-of select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
-																</xsl:for-each>
-															</xsl:variable>
-															<xsl:variable name="var1594_map_result_distinctvalues" >
-																<xsl:for-each select="fn:distinct-values($var1595_map_result_groupitems)">
-																	<xsl:variable name="var1598_result_mediumCode" >
-																		<xsl:call-template name="vmf:mediumCode">
-																			<xsl:with-param name="input" select="fn:upper-case(.)"/>
-																		</xsl:call-template>
-																	</xsl:variable>
-																	<xsl:if test="fn:exists($var1598_result_mediumCode)">
-																		<xsl:value-of select="$var1598_result_mediumCode"/>
-																	</xsl:if>
-																</xsl:for-each>
-															</xsl:variable>
-															<xsl:if test="fn:exists($var1594_map_result_distinctvalues)">
-																<xsl:value-of select="fn:string-join($var1594_map_result_distinctvalues, ' ')"/>
-															</xsl:if>
-														</xsl:if>
-													</xsl:variable>
-													<xsl:if test="fn:exists($var1591_cond_result_exists)">
-														<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI($var1591_cond_result_exists))"/></xsl:attribute>
-													</xsl:if>
-													<xsl:value-of select="$var1581_cond_result_exists"/>
+														<xsl:attribute name="codeList"><xsl:value-of select="xs:string('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MediumNameCode')"/></xsl:attribute>
+													<xsl:attribute name="codeListValue">
+														<xsl:value-of select="xs:string($var1618_mediaTypes)"/>
+													</xsl:attribute>
+													
+													<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string($var1581_joinedMappedMediaTypes)"/></xsl:attribute>
+											<xsl:value-of select="string('$var1618_mediaTypess')"/>
 												</gmd:MD_MediumNameCode>
 											</xsl:if>
 										</gmd:name>
@@ -4482,7 +4430,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 								</gmd:offLine>
 							</gmd:MD_DigitalTransferOptions>
 						</gmd:transferOptions>
-					</xsl:for-each-group>
+					</xsl:for-each>
 				</gmd:MD_Distribution>
 			</gmd:distributionInfo>
 			<!-- data quality section -->

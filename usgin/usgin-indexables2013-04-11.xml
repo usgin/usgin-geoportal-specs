@@ -14,12 +14,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<!-- edited for USGIN Geoportal configuration SMR 2014-11-19
-add and update various indexes; look for USGIN: comments
-Remove serviceIdentification paths; these won't appear inUSGIN metadata-->
-
-<!-- NOTE: xpaths use xpath 1.0 -->
-
 <!-- apiso-indexables.xml -->
 <indexables>
 
@@ -42,10 +36,9 @@ Remove serviceIdentification paths; these won't appear inUSGIN metadata-->
     
   <property meaning="apiso:Abstract"
     xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:abstract/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:abstract/gco:CharacterString"/>
- 
-    <!-- USGIN: add other places Format might show up, distributor and dataIdentification -->
+
   <property meaning="apiso:Format"
-    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributionFormat/gmd:MD_Format/name/gco:CharacterString | /gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributor/gmd:MD_Distributor/gmd:distributorFormat/gmd:MD_Format/gmd:name/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceFormat/gmd:MD_Format/gmd:name/gco:CharacterString"/>
+    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributionFormat/gmd:MD_Format/name/gco:CharacterString"/>
   
   <property meaning="apiso:Identifier"
     xpath="/gmd:MD_Metadata/gmd:fileIdentifier/gco:CharacterString"/>
@@ -54,22 +47,16 @@ Remove serviceIdentification paths; these won't appear inUSGIN metadata-->
     xpath="/gmd:MD_Metadata/gmd:dateStamp/gco:Date | /gmd:MD_Metadata/gmd:dateStamp/gco:DateTime"/>
   <!-- general core meaning, we assume is equivalent -->
   <property meaning="Modified"
-    xpath="/gmd:MD_Metadata/gmd:dateStamp/gco:Date | /gmd:Mata/gmd:dateStamp/gco:DateTime"/>
+    xpath="/gmd:MD_Metadata/gmd:dateStamp/gco:Date | /gmd:MD_Metadata/gmd:dateStamp/gco:DateTime"/>
 
-  <!-- USGIN: index both codeListValue and the element's value -->
+  <!-- codeListValue has the priority on element's value -->
   <property meaning="apiso:Type"
-    xpath="/gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/text()"/>
-  <property meaning="apiso:Type"
-    xpath="/gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/@codeListValue"/> 
+    xpath="/gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/text()[count(/gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/@codeListValue)=0] | /gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/@codeListValue[count(/gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/@codeListValue)>0]"/> 
     
-    <!-- USGIN: include hierachyLevel text value and codeListValue, and hierarchyLevelNames as per USGIN profile -->
-  <property meaning="type"
-    xpath="/gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/text()"/>
-  <property meaning="type"
-    xpath="/gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/@codeListValue"/> 
-  <property meaning="type"
-    xpath="/gmd:MD_Metadata/gmd:hierarchyLevelName/gco:CharacterString"/>
-   
+    <!-- general core meaning -->
+  <property meaning="Type"
+    xpath="/gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/text()[count(/gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/@codeListValue)=0] | /gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/@codeListValue[count(/gmd:MD_Metadata/gmd:hierarchyLevel/gmd:MD_ScopeCode/@codeListValue)>0]"/>
+
   <property meaning="apiso:BoundingBox"
     xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicBoundingBox | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/srv:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicBoundingBox">
     <property meaning="envelope.west" xpath="gmd:westBoundLongitude/gco:Decimal"/>
@@ -87,12 +74,11 @@ Remove serviceIdentification paths; these won't appear inUSGIN metadata-->
   <!-- end of CSW core (common) queryables -->  
   
   <!-- Specific CSW  ISO AP common (datasets and services) queryables -->
-  <!-- revision date of the resource -->
    <property meaning="apiso:RevisionDate"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date[../../gmd:dateType/gmd:CI_DateTypeCode/@codeListValue='revision']"/>
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date[../../gmd:dateType/gmd:CI_DateTypeCode/@codeListValue='revision'] | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date[../../gmd:dateType/gmd:CI_DateTypeCode/@codeListValue='revision']"/>
 
    <property meaning="apiso:AlternateTitle"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:alternateTitle/gco:CharacterString"/>
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:alternateTitle/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:alternateTitle/gco:CharacterString"/>
 
  <property meaning="apiso:CreationDate"
     xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date[../../gmd:dateType/gmd:CI_DateTypeCode/@codeListValue='creation'] | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date[../../gmd:dateType/gmd:CI_DateTypeCode/@codeListValue='creation']"/>
@@ -100,43 +86,37 @@ Remove serviceIdentification paths; these won't appear inUSGIN metadata-->
  <property meaning="apiso:PublicationDate"
     xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date[../../gmd:dateType/gmd:CI_DateTypeCode/@codeListValue='publication'] | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date[../../gmd:dateType/gmd:CI_DateTypeCode/@codeListValue='publication']"/>
 
-<!-- this interprets organization name as only the name of the organization responsible for the metadata
-  OGC ISO profile says 'Name of the organisation providing the resource', and xpath in spec is for resource pointOfContact
-  organization; for USGIN make POC organizaiton or cited responsible party organization-->
   <property meaning="apiso:OrganizationName"  
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString">
+    xpath="/gmd:MD_Metadata/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString">
   </property>
 
 <!-- stores true or false depending on constraints availability -->
  <property meaning="apiso:HasSecurityConstraints" xpathType="BOOLEAN"
-    xpath="count(/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints)>0"/>
+    xpath="count(/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints)>0"/>
 
-<!-- USGIN index the a CharacterSting, LanguageCode text, codelist value -->
 <property meaning="apiso:Language"
-    xpath="/gmd:MD_Metadata/gmd:language/gco:CharacterString | /gmd:MD_Metadata/gmd:language/gmd:LanguageCode/@codeListValue | /gmd:MD_Metadata/gmd:language/gmd:LanguageCode/text()"/>
-  
-<!-- USGIN add datasetURI -->
-  <property meaning="apiso:ResourceIdentifier"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString | /gmd:MD_Metadata/gmd:dataSetURI/gco:CharacterString"/>
-  
+    xpath="/gmd:MD_Metadata/gmd:language/gmd:LanguageCode/text()[count(/gmd:MD_Metadata/gmd:language/gmd:LanguageCode/@codeListValue)=0] | /gmd:MD_Metadata/gmd:language/gmd:LanguageCode/@codeListValue[count(/gmd:MD_Metadata/gmd:language/gmd:LanguageCode/@codeListValue)=1] | /gmd:MD_Metadata/gmd:language/gco:CharacterString[count(/gmd:MD_Metadata/gmd:language/gmd:LanguageCode)=0]"/>
+
+<property meaning="apiso:ResourceIdentifier"
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString"/>
+
 <property meaning="apiso:ParentIdentifier"
     xpath="/gmd:MD_Metadata/gmd:parentIdentifier/gco:CharacterString"/>
 
-<!-- not useful because there's no way to search for keywords of a particular type... -->    
 <property meaning="apiso:KeywordType"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:descriptiveKeywords/gmd:MD_Keywords/gmd:type/gmd:MD_KeywordTypeCode/@codeListValue"/>
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:descriptiveKeywords/gmd:MD_Keywords/gmd:type/gmd:MD_KeywordTypeCode/@codeListValue | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:descriptiveKeywords/gmd:MD_Keywords/gmd:type/gmd:MD_KeywordTypeCode/@codeListValue"/>
 
  <!-- ISO queryables applicable to datasets -->
- <property meaning="apiso:TopicCategory"
+ <property meaning="apiso:Topiccategory"
     xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:topicCategory/gmd:MD_TopicCategoryCode"/>
 
- <!-- USGIN: spec puts value in CharacterString; allow here for substitution of gmd:LanguageCode, but I don't think that occurs in the wild... -->
+ <!-- priority to the codeListValue if available -->
  <property meaning="apiso:ResourceLanguage"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:language/gco:CharacterString  | /gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:language/gmd:LanguageCode/text() | /gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:language/gmd:LanguageCode/@codeListValue"/>
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:language/gmd:LanguageCode/text()[count(/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:language/gmd:LanguageCode/@codeListValue)=0] | /gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:language/gmd:LanguageCode/@codeListValue[count(/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:language/gmd:LanguageCode/@codeListValue)>0]"/>
 
-  <!-- rules for datasets -->
+  <!-- rules for datasets and services, they are mutually exclusive so no need for conditions on the OR -->
   <property meaning="apiso:GeographicDescriptionCode"  
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicDescription/gmd:geographicIdentifier/gmd:MD_Identifier/gmd:code"/>
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicDescription/gmd:geographicIdentifier/gmd:MD_Identifier/gmd:code | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/srv:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicDescription/gmd:geographicIdentifier/gmd:MD_Identifier/gmd:code"/>
 
   <!-- spatial  (table 12) -->
   <property meaning="apiso:Denominator"  
@@ -183,10 +163,9 @@ Remove serviceIdentification paths; these won't appear inUSGIN metadata-->
 
   <!-- table 14 (page 49) for service  -->
   <!-- ISO queryables applicable to services -->
-  <!-- add CI_Online resource gmd:protocol in distributions -->
-  <property meaning="apiso:ServiceType"
-    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributor/gmd:MD_Distributor/gmd:distributorTransferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource/gmd:protocol[gco:CharacterString!='http']/gco:CharacterString"/>
-  <!-- none of the service-specific operations will get populated for USGIN metadata -->      
+ <property meaning="apiso:ServiceType"
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/srv:serviceType/gco:LocalName"/>
+        
  <property meaning="apiso:ServiceTypeVersion"
     xpath="/gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/srv:serviceTypeVersion/gco:CharacterString"/>
     
@@ -214,88 +193,65 @@ Remove serviceIdentification paths; these won't appear inUSGIN metadata-->
  <property meaning="apiso:Degree"
     xpath="/gmd:MD_Metadata/gmd:dataQualityInfo/gmd:DQ_DataQuality/gmd:report/gmd:DQ_DomainConsistency/gmd:result/gmd:DQ_ConformanceResult/gmd:pass/gco:Boolean"/>  
 
-    <!-- should this include the gmd:processStep/gmd:descriptions? -->
  <property meaning="apiso:Lineage"
     xpath="/gmd:MD_Metadata/gmd:dataQualityInfo/gmd:DQ_DataQuality/gmd:lineage/gmd:LI_Lineage/gmd:statement/gco:CharacterString"/>  
 
-<!-- index both the roleCode text value and the codeListValue -->
  <property meaning="apiso:ResponsiblePartyRole"
-   xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:role/gmd:CI_RoleCode"/>
-  <property meaning="apiso:ResponsiblePartyRole"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:role/gmd:CI_RoleCode/@codeListValue"/>  
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:role/gmd:CI_RoleCode[count(/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:role/gmd:CI_RoleCode/@codeListValue)=0] | /gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:role/gmd:CI_RoleCode/@codeListValue[count(/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:role/gmd:CI_RoleCode/@codeListValue)>0]"/>  
 
  <property meaning="apiso:ConditionApplyingToAccessAndUse"
     xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:otherConstraints/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:otherConstraints/gco:CharacterString"/>  
  
- 
- <!-- USGIN: include the AccessConstraints codeValue from legalConstraints-->
-<property meaning="apiso:AccessConstraints"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_Constraints/gmd:useLimitation/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_Constraints/gmd:useLimitation/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:accessConstraints/gmd:MD_RestrictionCode/@codeListValue"/>  
-
-
-<!-- USGIN: include the legal constratints useConstraints and useLimitation -->
+ <property meaning="apiso.inspireSpatialDataThemes"
+    xpath="//gmd:title[gco:CharacterString='GEMET - INSPIRE themes, version 1.0']/../../../gmd:keyword/gco:CharacterString"/>  
+       
+ <property meaning="apiso:AccessConstraints"
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_Constraints/gmd:useLimitation/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_Constraints/gmd:useLimitation/gco:CharacterString"/>  
  <property meaning="apiso:OtherConstraints"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:otherConstraints/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:otherConstraints/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:useLimitation/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:useConstraints/gmd:MD_RestrictionCode/@codeListValue"/>  
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:otherConstraints/gco:CharacterString | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:otherConstraints/gco:CharacterString"/>  
  <property meaning="apiso:Classification"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_SecurityConstraints/gmd:classification/gmd:MD_ClassificationCode/@codeListValue | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_SecurityConstraints/gmd:classification/gmd:MD_ClassificationCode/@codeListValue"/>
- 
- 
-  <!-- extra Geoportal common meanings --> 
-    <!-- this is not an apiso queryable or returnable... -->
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_SecurityConstraints/gmd:classification/gmd:MD_ClassificationCode/@codeListValue | /gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_SecurityConstraints/gmd:classification/gmd:MD_ClassificationCode/@codeListValue"/>  
+
  <property meaning="apiso:SpecificationTitle"
     xpath="/gmd:MD_Metadata/gmd:dataQualityInfo/gmd:DQ_DataQuality/gmd:report/gmd:DQ_DomainConsistency/gmd:result/gmd:DQ_ConformanceResult/gmd:specification/gmd:CI_Citation/gmd:title/gco:CharacterString"/>
  <property meaning="apiso:SpecificationDate"
     xpath="/gmd:MD_Metadata/gmd:dataQualityInfo/gmd:DQ_DataQuality/gmd:report/gmd:DQ_DomainConsistency/gmd:result/gmd:DQ_ConformanceResult/gmd:specification/gmd:CI_Citation/gmd:date/gmd:CI_Date/date/gco:Date"/>  
  <property meaning="apiso:SpecificationDateType"
     xpath="/gmd:MD_Metadata/gmd:dataQualityInfo/gmd:DQ_DataQuality/gmd:report/gmd:DQ_DomainConsistency/gmd:result/gmd:DQ_ConformanceResult/gmd:specification/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:dateType/gmd:CI_DateTypeCode/@codeListValue"/>  
- 
+
+
+  <!-- extra Geoportal common meanings -->  
   <!-- thumbnail.url -->
-  <!-- USGIN add browseGraphic online resource linkage -->
   <property meaning="apiso:BrowseGraphic"
     xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:graphicOverview/gmd:MD_BrowseGraphic/gmd:fileName/gco:CharacterString"/>
-  <property meaning="apiso:BrowseGraphic"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:graphicOverview/gmd:MD_BrowseGraphic/gmd:linkage/gmd:CI_OnlineResource/gmd:linkage/gmd:URL"/>
-  
+
   <!-- website.url -->
-<!-- USGIN add path for 'browsing' link in distribution -->
-<!-- USGIN change to catch distribution links that end in .htm or .html -->
-
+  <!-- 
   <property meaning="website.url"
-    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource[gmd:function/gmd:CI_OnLineFunctionCode/@codeListValue='browsing']/gmd:linkage/gmd:URL"/>
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource/gmd:linkage/gmd:URL"/>
   <property meaning="website.url"
-    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource[gmd:function/gmd:CI_OnLineFunctionCode/@codeListValue='search']/gmd:linkage/gmd:URL"/>
-  <property meaning="website.url"
-    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource/gmd:linkage/gmd:URL['html' = substring(.,string-length()-3)]"/>
- <property meaning="website.url"
-    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource/gmd:linkage/gmd:URL['htm' = substring(.,string-length()-2)]"/>
-<!-- have to deal with all the same possibilities under a distributor -->
-   <property meaning="website.url"
-    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributor/gmd:MD_Distributor/gmd:distributorTransferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource[gmd:function/gmd:CI_OnLineFunctionCode/@codeListValue='browsing']/gmd:linkage/gmd:URL"/>
-  <property meaning="website.url"
-    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributor/gmd:MD_Distributor/gmd:distributorTransferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource[gmd:function/gmd:CI_OnLineFunctionCode/@codeListValue='search']/gmd:linkage/gmd:URL"/>
-  <property meaning="website.url"
-    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributor/gmd:MD_Distributor/gmd:distributorTransferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource/gmd:linkage/gmd:URL['html' = substring(.,string-length()-3)]"/>
- <property meaning="website.url"
-    xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributor/gmd:MD_Distributor/gmd:distributorTransferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource/gmd:linkage/gmd:URL['htm' = substring(.,string-length()-2)]"/>
-
- 
-  <!-- Not really an APISO queryable or returnable property...-->
+    xpath="/gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource/gmd:linkage/gmd:URL"/>
+   -->
   <property meaning="apiso:Contact.URL"
     xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource/gmd:linkage/gmd:URL"/>
   <property meaning="apiso:Contact.URL"
     xpath="/gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource/gmd:linkage/gmd:URL"/>
- 
-<!-- contentType This is an ESRI field, not a CSW core queryable; it doesn't show up in the capabilities doc.-->
+  
+  <!-- resource.urls -->
+  <property meaning="resource.wms.url"
+    xpath="//gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource[gmd:protocol/gco:CharacterString='OGC:WMS']/gmd:linkage/gmd:URL"/>
+  <property meaning="resource.wfs.url"
+  	xpath="//gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource[gmd:protocol/gco:CharacterString='OGC:WFS']/gmd:linkage/gmd:URL"/>
+  <property meaning="resource.wcs.url"
+  	xpath="//gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource[gmd:protocol/gco:CharacterString='OGC:WCS']/gmd:linkage/gmd:URL"/>
+  <property meaning="resource.esri.url"
+  	xpath="//gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource[gmd:protocol/gco:CharacterString='ESRI']/gmd:linkage/gmd:URL"/>
+  <property meaning="resource.opendap.url"
+  	xpath="//gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource[gmd:protocol/gco:CharacterString='OPENDAP']/gmd:linkage/gmd:URL"/>
+  	
+  <!-- contentType -->
   <property meaning="contentType"
     xpath="/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource/gmd:function/gmd:CI_OnLineFunctionCode"/>
-
-<!-- USGIN author -->
-  <property meaning="originator"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty[gmd:role/gmd:CI_RoleCode/@codeListValue='originator']/gmd:individualName[gco:CharacterString!='missing']/gco:CharacterString"/>
-  <property meaning="originator"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty[gmd:role/gmd:CI_RoleCode/@codeListValue='author']/gmd:individualName[gco:CharacterString!='missing']/gco:CharacterString"/>
-  <property meaning="originator"
-    xpath="/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty[gmd:role/gmd:CI_RoleCode/@codeListValue='principalInvestigator']/gmd:individualName[gco:CharacterString!='missing']/gco:CharacterString"/>
 
 </indexables>
 
