@@ -14,18 +14,16 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<!-- test -->
-<schema key="USGIN-ISO19115" 
-        templateFile="gpt/metadata/iso/iso-19115-template.xml" 
-		    detailsXslt="gpt/metadata/iso/usgin/usgin-iso-details.xslt" 
-		    editable="true" 
-		    cswOutputSchema="http://www.isotc211.org/2005/gmd" 
+<schema key="iso-19115" 
+        templateFile="gpt/metadata/iso/iso-19115-template.xml"
+	editable="true"
+        detailsXslt="gpt/metadata/iso/iso-details.xslt"
+	cswOutputSchema="http://www.isotc211.org/2005/gmd" 
         cswBriefXslt="gpt/metadata/iso/apiso-brief.xslt" 
-        cswSummaryXslt="gpt/metadata/iso/apiso-summary.xslt"  
+        cswSummaryXslt="gpt/metadata/iso/apiso-summary.xslt" 
+        xsdLocation="http://www.isotc211.org/2005/gmd/metadataEntity.xsd[GML32]http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/gmd/metadataEntity.xsd"
         toEsriItemInfoXslt="gpt/metadata/iso/iso-toEsriItemInfo.xslt">
-  <!-- take out schema reference attribute from schema element-->
-  <!--        xsdLocation="http://www.isotc211.org/2005/gmd/metadataEntity.xsd[GML32]http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/gmd/metadataEntity.xsd" 
- -->
+  
   <!-- schema label -->
   <label resourceKey="catalog.mdParam.schema.iso19139.coregeog"/>
 
@@ -37,14 +35,12 @@
   <!-- schema interrogation -->
 <interrogation count="count(//gmd:maintenanceNote[contains(gco:CharacterString,'iso-19115-to-usgin-19115-data')])"/>  
 <!-- if the interrogation passes, the file is an ISO metadata file that has been through the iso19115 to
-usginISO19115 XSLT.  This definition file does not define any required validation constraints-->
+usginISO19115 XSLT.  This definition file does note define any required validation constraints-->
 
 <!-- <interrogation count="count(/gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification)"/>   -->
   
   <!-- indexables -->
-  <!-- uncomment here to use the standard out of the box apiso indexables -->
-  <!-- <indexables fileName="gpt/metadata/iso/apiso-indexables.xml"/> -->
-  <indexables fileName="gpt/metadata/iso/usgin/usgin-indexables.xml"/>
+  <indexables fileName="gpt/metadata/iso/apiso-indexables.xml"/>
   
   <!-- Geoportal XML editor -->
   <editor fileName="gpt/gxe/iso/iso19139/iso19139-dataset-editor.xml"/>

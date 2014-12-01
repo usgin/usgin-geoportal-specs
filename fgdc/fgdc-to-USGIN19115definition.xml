@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemas>
+<schema key="fgdc-to-USGIN19115" editable="false">  
+  <label resourceKey="catalog.usgin.schema.dataset.fgdcISO19115"/>	
+ 
+   <!-- schema interrogation -->
+   <interrogation count="count(/metadata/idinfo)"
+  toKnownSchemaXslt="gpt/metadata/fgdc/csdgm-to-iso19115_USGIN.xslt"/>
+ 
+</schema>
+</schemas>

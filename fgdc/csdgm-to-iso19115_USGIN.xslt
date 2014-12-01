@@ -45,14 +45,22 @@ SMR 2012-01-28 edit xslt to make it more intelligible and maintainable. Give var
 							reasonable names, remove spurious type casting, add comments	
 SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metadata, FGDC-STD-012-2002
 							To Do- add tests to recognize and handle remote sensing extensions.
+SMR 2014-11-23 Start painful conversion to work with XSLT v1.0 for geoportal
 -->
-<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gfc="http://www.isotc211.org/2005/gfc" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:gsr="http://www.isotc211.org/2005/gsr" xmlns:gss="http://www.isotc211.org/2005/gss" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vmf="http://www.altova.com/MapForce/UDF/vmf" xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:grp="http://www.altova.com/Mapforce/grouping" xmlns:usgin="http://resources.usgin.org/xslt/FGDC2ISO" exclude-result-prefixes="fn grp vmf xs xsi xsl" xmlns="http://www.opengis.net/gml">
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gfc="http://www.isotc211.org/2005/gfc" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:gsr="http://www.isotc211.org/2005/gsr" xmlns:gss="http://www.isotc211.org/2005/gss" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vmf="http://www.altova.com/MapForce/UDF/vmf" xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:grp="http://www.altova.com/Mapforce/grouping" xmlns:usgin="http://resources.usgin.org/xslt/FGDC2ISO" exclude-result-prefixes="fn grp vmf xs xsi xsl" xmlns="http://www.opengis.net/gml">
 	<!-- ********************** templates by SMR   **************************** -->
 	<xsl:template name="usgin:dateFormat">
-		<xsl:param name="inputDate" select="()"/>
-		<xsl:param name="inputTime" select="()"/>
+		<xsl:param name="inputDate"/>
+		<xsl:param name="inputTime"/>
 		<!-- var_DateString will contain either 'nilAAAAA' where AAAA is a nilReason, a valid xs:dateTime, or it will contain a valid Date in format YYYY-MM-DD -->
-		<xsl:variable name="var_DateString">
+		<xsl:variable name="currentDateTime">
+			<xsl:value-of select="string('2014-12-31T12:00:00Z')"/>
+		</xsl:variable>
+		<!-- a brute force, incomplete test for DateTime for xslt 1.0 -->
+		<xsl:variable name="castableAsDateTime">
+			<xsl:value-of select="(substring($inputDate,5,1)='-') and (substring($inputDate,8,1)='-') and (substring($inputDate,11,1)='T') and (substring($inputDate,14,1)=':') and (substring($inputDate,17,1)=':')"/>
+		</xsl:variable>
+			<xsl:variable name="var_DateString">
 			<xsl:choose>
 				<xsl:when test="(fn:contains(fn:lower-case(fn:normalize-space(fn:string($inputDate))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string($inputDate))), 'unpublished'))">
 					<!-- xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(fn:normalize-space(fn:string(.)))"/></xsl:attribute -->
@@ -60,17 +68,17 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 				</xsl:when>
 				<xsl:when test="fn:contains(fn:lower-case(fn:normalize-space(fn:string($inputDate))), 'present')">
 					<!--gco:DateTime -->
-					<xsl:value-of select="fn:string(current-dateTime())"/>
+					<xsl:value-of select="$currentDateTime"/>
 					<!-- /gco:DateTime -->
 				</xsl:when>
-				<xsl:when test="(fn:normalize-space(fn:string($inputDate)) castable as xs:dateTime)">
+				<xsl:when test="($castableAsDateTime)">
 					<!-- gco:DateTime -->
 					<xsl:value-of select="fn:string($inputDate)"/>
 					<!-- /gco:DateTime -->
 				</xsl:when>
 				<!-- convert YYYYMMDD format to YYYY-MM-DD format -->
 				<xsl:otherwise>
-					<xsl:variable name="var_dateString_result" as="xs:string?">
+					<xsl:variable name="var_dateString_result" >
 						<xsl:choose>
 							<xsl:when test="string-length(fn:normalize-space(fn:string($inputDate)))=8">
 								<xsl:value-of select="fn:concat(fn:substring(fn:normalize-space(fn:string($inputDate)), 0, 5), '-', fn:substring(fn:normalize-space(fn:string($inputDate)), 5, 2), '-',fn:substring(fn:normalize-space(fn:string($inputDate)), 7, 2))"/>
@@ -86,11 +94,12 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 							</xsl:otherwise>
 						</xsl:choose>
 					</xsl:variable>
+					<xsl:variable name="castableAsDate">
+						<xsl:value-of select="(substring($inputDate,5,1)='-') and (substring($inputDate,8,1)='-')"/>
+					</xsl:variable>
 					<xsl:choose>
-						<xsl:when test="($var_dateString_result castable as xs:date)">
-							<!-- gco:DateTime -->
+						<xsl:when test="$castableAsDate">
 							<xsl:value-of select="$var_dateString_result"/>
-							<!-- /gco:DateTime -->
 						</xsl:when>
 						<xsl:otherwise>
 							<!-- date format is screwy, put in default value -->
@@ -111,13 +120,13 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 					<xsl:value-of select="xs:string('12:00:00')"/>
 				</xsl:when>
 				<xsl:when test="string-length($inputTime)=6">
-					<xsl:sequence select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':', fn:substring(fn:string($inputTime),3,2), ':', fn:substring(fn:string($inputTime), 5, 2))"/>
+					<xsl:value-of select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':', fn:substring(fn:string($inputTime),3,2), ':', fn:substring(fn:string($inputTime), 5, 2))"/>
 				</xsl:when>
 				<xsl:when test="string-length($inputTime)=4">
-					<xsl:sequence select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':', fn:substring(fn:string($inputTime),3,2), ':00')"/>
+					<xsl:value-of select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':', fn:substring(fn:string($inputTime),3,2), ':00')"/>
 				</xsl:when>
 				<xsl:when test="string-length($inputTime)=2">
-					<xsl:sequence select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':00:00')"/>
+					<xsl:value-of select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':00:00')"/>
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:value-of select="xs:string('12:00:00')"/>
@@ -131,7 +140,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 				<xsl:attribute name="gco:nilReason"><xsl:value-of select="substring-after($var_DateString,'nil')"/></xsl:attribute>
 				<gco:DateTime>1900-01-01T12:00:00</gco:DateTime>
 			</xsl:when>
-			<xsl:when test="(fn:normalize-space(fn:string($var_DateString)) castable as xs:dateTime)">
+			<xsl:when test="$castableAsDateTime">
 				<gco:DateTime>
 					<xsl:value-of select="fn:string($var_DateString)"/>
 				</gco:DateTime>
@@ -156,6 +165,12 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		<xsl:param name="inputDate"/>
 		<xsl:param name="inputTime"/>
 		<!-- var_DateString will contain either 'nilAAAAA' where AAAA is a nilReason, a valid xs:dateTime, or it will contain a valid Date in format YYYY-MM-DD -->
+		<xsl:variable name="castableAsDateTime">
+			<xsl:value-of select="(substring($inputDate,5,1)='-') and (substring($inputDate,8,1)='-') and (substring($inputDate,11,1)='T') and (substring($inputDate,14,1)=':') and (substring($inputDate,17,1)=':')"/>
+		</xsl:variable>
+		<xsl:variable name="currentDateTime">
+			<xsl:value-of select="string('2014-12-31T12:00:00Z')"/>
+		</xsl:variable>
 		<xsl:variable name="var_DateString">
 			<xsl:choose>
 				<xsl:when test="(fn:contains(fn:lower-case(fn:normalize-space(fn:string($inputDate))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string($inputDate))), 'unpublished'))">
@@ -164,17 +179,17 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 				</xsl:when>
 				<xsl:when test="fn:contains(fn:lower-case(fn:normalize-space(fn:string($inputDate))), 'present')">
 					<!--gco:DateTime -->
-					<xsl:value-of select="fn:string(current-dateTime())"/>
+					<xsl:value-of select="$currentDateTime"/>
 					<!-- /gco:DateTime -->
 				</xsl:when>
-				<xsl:when test="(fn:normalize-space(fn:string($inputDate)) castable as xs:dateTime)">
+				<xsl:when test="($castableAsDateTime)">
 					<!-- gco:DateTime -->
 					<xsl:value-of select="fn:string($inputDate)"/>
 					<!-- /gco:DateTime -->
 				</xsl:when>
 				<!-- convert YYYYMMDD format to YYYY-MM-DD format -->
 				<xsl:otherwise>
-					<xsl:variable name="var_dateString_result" as="xs:string?">
+					<xsl:variable name="var_dateString_result" >
 						<xsl:choose>
 							<xsl:when test="string-length(fn:normalize-space(fn:string($inputDate)))=8">
 								<xsl:value-of select="fn:concat(fn:substring(fn:normalize-space(fn:string($inputDate)), 0, 5), '-', fn:substring(fn:normalize-space(fn:string($inputDate)), 5, 2), '-',fn:substring(fn:normalize-space(fn:string($inputDate)), 7, 2))"/>
@@ -190,11 +205,12 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 							</xsl:otherwise>
 						</xsl:choose>
 					</xsl:variable>
+					<xsl:variable name="castableAsDate">
+						<xsl:value-of select="(substring($inputDate,5,1)='-') and (substring($inputDate,8,1)='-')"/>
+					</xsl:variable>
 					<xsl:choose>
-						<xsl:when test="($var_dateString_result castable as xs:date)">
-							<!-- gco:DateTime -->
+						<xsl:when test="($castableAsDate)">
 							<xsl:value-of select="$var_dateString_result"/>
-							<!-- /gco:DateTime -->
 						</xsl:when>
 						<xsl:otherwise>
 							<!-- date format is screwy, put in default value -->
@@ -215,13 +231,13 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 					<xsl:value-of select="xs:string('12:00:00')"/>
 				</xsl:when>
 				<xsl:when test="string-length($inputTime)=6">
-					<xsl:sequence select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':', fn:substring(fn:string($inputTime),3,2), ':', fn:substring(fn:string($inputTime), 5, 2))"/>
+					<xsl:value-of select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':', fn:substring(fn:string($inputTime),3,2), ':', fn:substring(fn:string($inputTime), 5, 2))"/>
 				</xsl:when>
 				<xsl:when test="string-length($inputTime)=4">
-					<xsl:sequence select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':', fn:substring(fn:string($inputTime),3,2), ':00')"/>
+					<xsl:value-of select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':', fn:substring(fn:string($inputTime),3,2), ':00')"/>
 				</xsl:when>
 				<xsl:when test="string-length($inputTime)=2">
-					<xsl:sequence select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':00:00')"/>
+					<xsl:value-of select="fn:concat(fn:substring(fn:string($inputTime), 0, 3), ':00:00')"/>
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:value-of select="xs:string('12:00:00')"/>
@@ -234,7 +250,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 			<xsl:when test="starts-with(xs:string($var_DateString),'nil')">
 				<xsl:value-of select="fn:string('indeterminate')"/>
 			</xsl:when>
-			<xsl:when test="(fn:normalize-space(fn:string($var_DateString)) castable as xs:dateTime)">
+			<xsl:when test="($castableAsDateTime)">
 				<xsl:value-of select="fn:string($var_DateString)"/>
 			</xsl:when>
 			<xsl:when test="fn:exists($var_DateString) and (fn:string-length($var_DateString)=10) and (fn:string-length($var_timeString)=8)">
@@ -249,9 +265,9 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="usgin:contactName">
-		<xsl:param name="inputPersonNode" select="()"/>
-		<xsl:param name="inputOrganizationNode" select="()"/>
-		<xsl:param name="inputPositionNode" select="()"/>
+		<xsl:param name="inputPersonNode"/>
+		<xsl:param name="inputOrganizationNode"/>
+		<xsl:param name="inputPositionNode"/>
 		<!-- handler for individual, organization, position name -->
 		<!-- done scraping content for contact name -->
 		<!-- now populate the elements count(individualName + OrganisationName + positionName) must be >0 -->
@@ -262,7 +278,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 					<gmd:individualName>
 						<gco:CharacterString>
 							<xsl:for-each select="$inputPersonNode">
-								<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+								<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 								<xsl:if test="(count($inputPersonNode)>1)">
 									<xsl:value-of select="xs:string(' ')"/>
 								</xsl:if>
@@ -274,7 +290,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 					<gmd:organisationName>
 						<gco:CharacterString>
 							<xsl:for-each select="$inputOrganizationNode">
-								<xsl:sequence select="fn:concat(fn:normalize-space(xs:string(.)), ' ')"/>
+								<xsl:value-of select="fn:concat(fn:normalize-space(xs:string(.)), ' ')"/>
 								<!-- xsl:if test="(count($inputOrganizationNode)>1)">
 									<xsl:value-of select="xs:string(' ')"/>
 								</xsl:if -->
@@ -287,7 +303,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 						<gmd:positionName>
 							<gco:CharacterString>
 								<xsl:for-each select="$inputPositionNode">
-									<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+									<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 									<xsl:if test="(count($inputPositionNode)>1)">
 										<xsl:value-of select="xs:string(' ')"/>
 									</xsl:if>
@@ -308,41 +324,41 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 	</xsl:template>
 	<!-- *************************************************** -->
 	<xsl:template name="usgin:addressFormat">
-		<xsl:param name="inputAddr" select="()"/>
+		<xsl:param name="inputAddr"/>
 		<!-- don't put in postal address elements unless at least one has a value -->
 		<xsl:if test="fn:exists($inputAddr/address) or fn:exists($inputAddr/city) or fn:exists($inputAddr/state) or fn:exists($inputAddr/postal) or fn:exists($inputAddr/country)">
 			<xsl:for-each select="$inputAddr/address">
 				<gmd:deliveryPoint>
 					<gco:CharacterString>
-						<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+						<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 					</gco:CharacterString>
 				</gmd:deliveryPoint>
 			</xsl:for-each>
 			<xsl:for-each select="$inputAddr/city">
 				<gmd:city>
 					<gco:CharacterString>
-						<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+						<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 					</gco:CharacterString>
 				</gmd:city>
 			</xsl:for-each>
 			<xsl:for-each select="$inputAddr/state">
 				<gmd:administrativeArea>
 					<gco:CharacterString>
-						<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+						<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 					</gco:CharacterString>
 				</gmd:administrativeArea>
 			</xsl:for-each>
 			<xsl:for-each select="$inputAddr/postal">
 				<gmd:postalCode>
 					<gco:CharacterString>
-						<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+						<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 					</gco:CharacterString>
 				</gmd:postalCode>
 			</xsl:for-each>
 			<xsl:for-each select="$inputAddr/country">
 				<gmd:country>
 					<gco:CharacterString>
-						<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+						<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 					</gco:CharacterString>
 				</gmd:country>
 			</xsl:for-each>
@@ -350,18 +366,18 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 	</xsl:template>
 	<!-- ********************************************************** -->
 	<xsl:template name="usgin:telephoneFormat">
-		<xsl:param name="telNode" select="()"/>
-		<xsl:variable name="var_voicePhone_exists" as="xs:string*">
+		<xsl:param name="telNode"/>
+		<xsl:variable name="var_voicePhone_exists" >
 			<xsl:if test="fn:exists($telNode/cntvoice)">
 				<xsl:for-each select="$telNode/cntvoice">
-					<xsl:sequence select="xs:string(.)"/>
+					<xsl:value-of select="xs:string(.)"/>
 				</xsl:for-each>
 			</xsl:if>
 		</xsl:variable>
-		<xsl:variable name="var_faxPhone_exists" as="xs:string*">
+		<xsl:variable name="var_faxPhone_exists" >
 			<xsl:if test="fn:exists($telNode/cntfax)">
 				<xsl:for-each select="$telNode/cntfax">
-					<xsl:sequence select="xs:string(.)"/>
+					<xsl:value-of select="xs:string(.)"/>
 				</xsl:for-each>
 			</xsl:if>
 		</xsl:variable>
@@ -374,7 +390,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 						<gmd:voice>
 							<gco:CharacterString>
 								<xsl:for-each select="$var_voicePhone_exists">
-									<xsl:sequence select="fn:concat(fn:normalize-space(.),' ')"/>
+									<xsl:value-of select="fn:concat(fn:normalize-space(.),' ')"/>
 								</xsl:for-each>
 							</gco:CharacterString>
 						</gmd:voice>
@@ -383,7 +399,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 						<gmd:facsimile>
 							<gco:CharacterString>
 								<xsl:for-each select="$var_faxPhone_exists">
-									<xsl:sequence select="fn:concat(fn:normalize-space(.),' ')"/>
+									<xsl:value-of select="fn:concat(fn:normalize-space(.),' ')"/>
 								</xsl:for-each>
 							</gco:CharacterString>
 						</gmd:facsimile>
@@ -394,11 +410,11 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 	</xsl:template>
 	<!-- ********************************************************** -->
 	<xsl:template name="usgin:emailFormat">
-		<xsl:param name="emailNode" select="()"/>
-		<xsl:variable name="var_eMail_exists" as="xs:string*">
+		<xsl:param name="emailNode"/>
+		<xsl:variable name="var_eMail_exists" >
 			<xsl:if test="fn:exists($emailNode/cntemail)">
 				<xsl:for-each select="$emailNode/cntemail">
-					<xsl:sequence select="xs:string(.)"/>
+					<xsl:value-of select="xs:string(.)"/>
 				</xsl:for-each>
 			</xsl:if>
 		</xsl:variable>
@@ -408,9 +424,9 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 				<xsl:when test="fn:exists($var_eMail_exists)">
 					<gco:CharacterString>
 						<xsl:for-each select="$var_eMail_exists">
-							<xsl:sequence select="fn:concat(fn:normalize-space(.),' ')"/>
+							<xsl:value-of select="fn:concat(fn:normalize-space(.),' ')"/>
 						</xsl:for-each>
-						<!-- xsl:sequence select="fn:normalize-space($var_eMail_exists)"/-->
+						<!-- xsl:value-of select="fn:normalize-space($var_eMail_exists)"/-->
 					</gco:CharacterString>
 				</xsl:when>
 				<xsl:otherwise>
@@ -421,7 +437,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 	</xsl:template>
 	<!--  section 1, functions to translate generic codelist terms into ISO codeListValue and codelist code -->
 	<xsl:template name="vmf:geometryType">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='POINT'">
 				<xsl:value-of select="'point'"/>
@@ -438,7 +454,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:geometryCode">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='POINT'">
 				<xsl:value-of select="'001'"/>
@@ -455,7 +471,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:geometryType2">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='POINT'">
 				<xsl:value-of select="'point'"/>
@@ -538,7 +554,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:geometryCode2">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='POINT'">
 				<xsl:value-of select="'004'"/>
@@ -621,7 +637,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:unknown">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='UNKNOWN'">
 				<xsl:value-of select="'unknown'"/>
@@ -629,7 +645,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:docType">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='ATLAS'">
 				<xsl:value-of select="'mapHardcopy'"/>
@@ -697,7 +713,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:docCode">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='ATLAS'">
 				<xsl:value-of select="'006'"/>
@@ -765,7 +781,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:statusType">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='COMPLETED'">
 				<xsl:value-of select="'completed'"/>
@@ -800,7 +816,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:statusCode">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='COMPLETED'">
 				<xsl:value-of select="'001'"/>
@@ -835,7 +851,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:updateFrequency">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='CONTINUALLY'">
 				<xsl:value-of select="'continual'"/>
@@ -888,7 +904,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:updateFrequencyCode">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='CONTINUALLY'">
 				<xsl:value-of select="'001'"/>
@@ -941,7 +957,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:securityClassType">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='CONFIDENTIAL'">
 				<xsl:value-of select="'confidential'"/>
@@ -964,7 +980,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:securityClassCode">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='CONFIDENTIAL'">
 				<xsl:value-of select="'003'"/>
@@ -987,7 +1003,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:spatialRepresentationType">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='POINT'">
 				<xsl:value-of select="'vector'"/>
@@ -1001,7 +1017,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:spatialRepresentationCode">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='vector'">
 				<xsl:value-of select="'001'"/>
@@ -1012,7 +1028,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:mediumType">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='CD-ROM'">
 				<xsl:value-of select="'cdRom'"/>
@@ -1083,7 +1099,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:mediumCode">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='CD-ROM'">
 				<xsl:value-of select="'001'"/>
@@ -1154,7 +1170,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:encodingType">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='CPIO'">
 				<xsl:value-of select="'cpio'"/>
@@ -1183,7 +1199,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		</xsl:choose>
 	</xsl:template>
 	<xsl:template name="vmf:encodingCode">
-		<xsl:param name="input" select="()"/>
+		<xsl:param name="input"/>
 		<xsl:choose>
 			<xsl:when test="$input='CPIO'">
 				<xsl:value-of select="'001'"/>
@@ -1214,13 +1230,13 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 	<xsl:function name="grp:sourcesUsed">
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/srcused">
-			<xsl:sequence select="xs:string(.)"/>
+			<xsl:value-of select="xs:string(.)"/>
 		</xsl:for-each>
 	</xsl:function>
 	<xsl:function name="grp:origins">
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/origin">
-			<xsl:sequence select="xs:string(xs:string(.))"/>
+			<xsl:value-of select="xs:string(xs:string(.))"/>
 		</xsl:for-each>
 	</xsl:function>
 	<!-- end of codelist lookup functions -->
@@ -1234,81 +1250,84 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/themekt">
 			<xsl:if test="not(fn:contains(xs:string(xs:string(.)), 'ISO 19115'))">
-				<xsl:sequence select="xs:string(.)"/>
+				<xsl:value-of select="xs:string(.)"/>
 			</xsl:if>
 		</xsl:for-each>
 	</xsl:function>
 	<xsl:function name="grp:themekeyKeyword">
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/themekey">
-			<xsl:sequence select="xs:string(.)"/>
+			<xsl:value-of select="xs:string(.)"/>
 		</xsl:for-each>
 	</xsl:function>
 	<xsl:function name="grp:placektKeywords">
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/placekt">
-			<xsl:sequence select="xs:string(xs:string(.))"/>
+			<xsl:value-of select="xs:string(xs:string(.))"/>
 		</xsl:for-each>
 	</xsl:function>
 	<xsl:function name="grp:placeKeyword">
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/placekey">
-			<xsl:sequence select="xs:string(.)"/>
+			<xsl:value-of select="xs:string(.)"/>
 		</xsl:for-each>
 	</xsl:function>
 	<xsl:function name="grp:strataktKeywords">
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/stratkt">
-			<xsl:sequence select="xs:string(.)"/>
+			<xsl:value-of select="xs:string(.)"/>
 		</xsl:for-each>
 	</xsl:function>
 	<xsl:function name="grp:strataKeyword">
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/stratkey">
-			<xsl:sequence select="xs:string(.)"/>
+			<xsl:value-of select="xs:string(.)"/>
 		</xsl:for-each>
 	</xsl:function>
 	<!-- tempkt is temporal keyword thesaurus -->
 	<xsl:function name="grp:tempktKeywords">
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/tempkt">
-			<xsl:sequence select="xs:string(xs:string(.))"/>
+			<xsl:value-of select="xs:string(xs:string(.))"/>
 		</xsl:for-each>
 	</xsl:function>
 	<xsl:function name="grp:temporalKeyword">
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/tempkey">
-			<xsl:sequence select="xs:string(.)"/>
+			<xsl:value-of select="xs:string(.)"/>
 		</xsl:for-each>
 	</xsl:function>
 	<xsl:function name="grp:calendarDate">
 		<xsl:param name="cur"/>
 		<xsl:for-each select="$cur/caldate">
-			<xsl:sequence select="xs:string(xs:string(.))"/>
+			<xsl:value-of select="xs:string(xs:string(.))"/>
 		</xsl:for-each>
 	</xsl:function>
 	<!-- end of group definition functions -->
 	<!--  ***************** -->
 	<!-- Start actual output metadata record here, let's get down to business -->
 	<xsl:template match="/">
+		<xsl:variable name="currentDateTime">
+			<xsl:value-of select="string('2014-12-31T12:00:00Z')"/>
+		</xsl:variable>
 		<gmd:MD_Metadata>
-			<xsl:attribute name="xsi:schemaLocation" separator=" "><xsl:sequence select="'http://www.isotc211.org/2005/gmd http://schemas.opengis.net/iso/19139/20060504/gmd/gmd.xsd'"/></xsl:attribute>
-			<xsl:variable name="var_InputRootNode" as="node()" select="."/>
-			<xsl:variable name="var_metadataRoot" as="node()" select="./metadata"/>
+			<xsl:attribute name="xsi:schemaLocation"><xsl:value-of select="'http://www.isotc211.org/2005/gmd http://schemas.opengis.net/iso/19139/20060504/gmd/gmd.xsd'"/></xsl:attribute>
+			<xsl:variable name="var_InputRootNode" select="."/>
+			<xsl:variable name="var_metadataRoot" select="./metadata"/>
 			<!-- these all have fixed values for now -->
 
 			<gmd:fileIdentifier>
 				<gco:CharacterString>
 					<xsl:choose>
 						<xsl:when test="fn:exists($var_metadataRoot/idinfo/citation/citeinfo/onlink[1])">
-							<xsl:sequence select="fn:normalize-space(fn:substring-after(xs:string($var_metadataRoot/idinfo/citation/citeinfo/onlink[1]),'//'))"/>
+							<xsl:value-of select="fn:normalize-space(fn:substring-after(xs:string($var_metadataRoot/idinfo/citation/citeinfo/onlink[1]),'//'))"/>
 						</xsl:when>
 						<xsl:when test="fn:exists($var_metadataRoot/distinfo[1]/resdesc)">
-							<xsl:sequence select="fn:replace(fn:normalize-space(xs:string($var_metadataRoot/distinfo[1]/resdesc)),' ','')"/>
+							<xsl:value-of select="fn:replace(fn:normalize-space(xs:string($var_metadataRoot/distinfo[1]/resdesc)),' ','')"/>
 						</xsl:when>
 						<xsl:otherwise>
 							<!-- put in something, USGIN profile requires... -->
-							<xsl:value-of select="fn:concat(fn:string('http://www.opengis.net/def/nil/OGC/0/missing/'),fn:string(current-dateTime()))"/>
+							<xsl:value-of select="fn:concat(fn:string('http://www.opengis.net/def/nil/OGC/0/missing/'),$currentDateTime)"/>
 						</xsl:otherwise>
 					</xsl:choose>	
 				</gco:CharacterString>
@@ -1331,36 +1350,36 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 			<gmd:contact>
 				<gmd:CI_ResponsibleParty>
 					<!-- scrape input cntinfo for person and org names that might be in one of 2 places -->
-					<xsl:variable name="var_contactIndividual_exists" as="xs:string*">
+					<xsl:variable name="var_contactIndividual_exists" >
 						<xsl:choose>
 							<xsl:when test="fn:exists($var_metadataRoot/metainfo/metc/cntinfo/cntperp/cntper)">
 								<!-- old xsl:when test="fn:exists($var5_map_select_metadata)" -->
 								<xsl:for-each select="$var_metadataRoot/metainfo/metc/cntinfo/cntperp/cntper">
-									<xsl:sequence select="xs:string(.)"/>
+									<xsl:value-of select="xs:string(.)"/>
 								</xsl:for-each>
 							</xsl:when>
 							<xsl:otherwise>
 								<xsl:for-each select="$var_metadataRoot/metainfo/metc/cntinfo/cntorgp/cntper">
-									<xsl:sequence select="xs:string(.)"/>
+									<xsl:value-of select="xs:string(.)"/>
 								</xsl:for-each>
 							</xsl:otherwise>
 						</xsl:choose>
 					</xsl:variable>
-					<!-- xsl:variable name="var16_map_select_metadata" as="xs:string*">
+					<!-- xsl:variable name="var16_map_select_metadata" >
 							<xsl:for-each select="$var_metadataRoot/metainfo/metc/cntinfo/cntperp/cntorg">
-								<xsl:sequence select="xs:string(.)"/>
+								<xsl:value-of select="xs:string(.)"/>
 							</xsl:for-each>
 						</xsl:variable -->
-					<xsl:variable name="var_contactOrganisation_exists" as="xs:string*">
+					<xsl:variable name="var_contactOrganisation_exists" >
 						<xsl:choose>
 							<xsl:when test="fn:exists($var_metadataRoot/metainfo/metc/cntinfo/cntperp/cntorg)">
 								<xsl:for-each select="$var_metadataRoot/metainfo/metc/cntinfo/cntperp/cntorg">
-									<xsl:sequence select="xs:string(.)"/>
+									<xsl:value-of select="xs:string(.)"/>
 								</xsl:for-each>
 							</xsl:when>
 							<xsl:otherwise>
 								<xsl:for-each select="$var_metadataRoot/metainfo/metc/cntinfo/cntorgp/cntorg">
-									<xsl:sequence select="xs:string(.)"/>
+									<xsl:value-of select="xs:string(.)"/>
 								</xsl:for-each>
 							</xsl:otherwise>
 						</xsl:choose>
@@ -1374,10 +1393,10 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 					</xsl:call-template>
 					<gmd:contactInfo>
 						<gmd:CI_Contact>
-							<!--xsl:variable name="var_eMail_exists" as="xs:string*">
+							<!--xsl:variable name="var_eMail_exists" >
 								<xsl:if test="fn:exists($var_metadataRoot/metainfo/metc/cntinfo/cntemail)">
 									<xsl:for-each select="$var_metadataRoot/metainfo/metc/cntinfo/cntemail">
-										<xsl:sequence select="xs:string(.)"/>
+										<xsl:value-of select="xs:string(.)"/>
 									</xsl:for-each>
 								</xsl:if>
 							</xsl:variable -->
@@ -1399,7 +1418,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 										<xsl:choose>
 											<xsl:when test="fn:exists($var_eMail_exists)">
 												<gco:CharacterString>
-													<xsl:sequence select="fn:normalize-space($var_eMail_exists)"/>
+													<xsl:value-of select="fn:normalize-space($var_eMail_exists)"/>
 												</gco:CharacterString>
 											</xsl:when>
 											<xsl:otherwise>
@@ -1415,7 +1434,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 								<gmd:hoursOfService>
 									<!-- xsl:for-each select="" pull this out so don't end up withh multiple characterstring elements -->
 									<gco:CharacterString>
-										<xsl:sequence select="fn:normalize-space(xs:string($var_metadataRoot/metainfo/metc/cntinfo/hours))"/>
+										<xsl:value-of select="fn:normalize-space(xs:string($var_metadataRoot/metainfo/metc/cntinfo/hours))"/>
 									</gco:CharacterString>
 									<!-- /xsl:for-each -->
 								</gmd:hoursOfService>
@@ -1424,7 +1443,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 								<gmd:contactInstructions>
 									<!--xsl:for-each select="" pull this out so don't end up withh multiple characterstring elements -->
 									<gco:CharacterString>
-										<xsl:sequence select="fn:normalize-space(xs:string($var_metadataRoot/metainfo/metc/cntinfo/cntinst))"/>
+										<xsl:value-of select="fn:normalize-space(xs:string($var_metadataRoot/metainfo/metc/cntinfo/cntinst))"/>
 									</gco:CharacterString>
 									<!-- /xsl:for-each -->
 								</gmd:contactInstructions>
@@ -1441,33 +1460,38 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 				<xsl:for-each select="$var_metadataRoot/metainfo/metd">
 					<xsl:call-template name="usgin:dateFormat">
 						<xsl:with-param name="inputDate" select="$var_metadataRoot/metainfo/metd"/>
-						<xsl:with-param name="inputTime" select="()"/>
+						<xsl:with-param name="inputTime"/>
 					</xsl:call-template>
 				</xsl:for-each>
 			</gmd:dateStamp>
 			<gmd:metadataStandardName>
 				<gco:CharacterString>
-					<xsl:sequence select="'ISO-USGIN'"/>
+					<xsl:value-of select="'ISO-USGIN'"/>
 				</gco:CharacterString>
 			</gmd:metadataStandardName>
 			<gmd:metadataStandardVersion>
 				<gco:CharacterString>
-					<xsl:sequence select="'1.1'"/>
+					<xsl:value-of select="'1.2'"/>
 				</gco:CharacterString>
 			</gmd:metadataStandardVersion>
 			<!-- if there is a URL supplied in the citation for the resource, use this as the resource identifier -->
 			<gmd:dataSetURI>
 				<gco:CharacterString>
 					<xsl:choose>
+						<!-- check first for FGDC-STD-012-2002 (extensions for Remote Sensing) identifier, that would be the best... -->
+						<xsl:when test="fn:exists($var_metadataRoot/idinfo/datsetid)">
+							<xsl:value-of select="fn:normalize-space(xs:string($var_metadataRoot/idinfo/datsetid))"/>
+						</xsl:when>
+						<!-- otherwise try a couple things that might be in original FGDC CSDGM -->
 						<xsl:when test="fn:exists($var_metadataRoot/idinfo/citation/citeinfo/onlink[1])">
-							<xsl:sequence select="fn:normalize-space(xs:string($var_metadataRoot/idinfo/citation/citeinfo/onlink[1]))"/>
+							<xsl:value-of select="fn:normalize-space(xs:string($var_metadataRoot/idinfo/citation/citeinfo/onlink[1]))"/>
 						</xsl:when>
 						<xsl:when test="fn:exists($var_metadataRoot/distinfo[1]/resdesc)">
-							<xsl:sequence select="fn:normalize-space(xs:string($var_metadataRoot/distinfo[1]/resdesc))"/>
+							<xsl:value-of select="fn:normalize-space(xs:string($var_metadataRoot/distinfo[1]/resdesc))"/>
 						</xsl:when>
 						<xsl:otherwise>
 							<!-- put in something, USGIN profile requires... -->
-							<xsl:value-of select="fn:concat(fn:string('http://www.opengis.net/def/nil/OGC/0/missing/'),fn:string(current-dateTime()))"/>
+							<xsl:value-of select="fn:concat(fn:string('http://www.opengis.net/def/nil/OGC/0/missing/'),$currentDateTime)"/>
 						</xsl:otherwise>
 					</xsl:choose>
 				</gco:CharacterString>
@@ -1478,17 +1502,17 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 				<xsl:for-each select="spdoinfo">
 					<!-- spatial representation -->
 					<xsl:for-each select="rastinfo">
-						<xsl:variable name="var_rastinfoNode" as="node()" select="."/>
+						<xsl:variable name="var_rastinfoNode" select="."/>
 						<gmd:spatialRepresentationInfo>
 							<gmd:MD_GridSpatialRepresentation>
-								<xsl:variable name="var_rowCount_exists" as="xs:decimal?" select="(if (fn:exists(rowcount)) then xs:decimal(1) else ())"/>
-								<xsl:variable name="var_colCount_exists" as="xs:decimal?" select="(if (fn:exists(colcount)) then xs:decimal(1) else ())"/>
-								<xsl:variable name="var_vrtCount_exists" as="xs:decimal?" select="(if (fn:exists(vrtcount)) then xs:decimal(1) else ())"/>
+								<xsl:variable name="var_rowCount_exists"  select="(fn:exists(rowcount))"/>
+								<xsl:variable name="var_colCount_exists"  select="(fn:exists(colcount))"/>
+								<xsl:variable name="var_vrtCount_exists"  select="(fn:exists(vrtcount))"/>
 								<gmd:numberOfDimensions>
 									<xsl:choose>
 										<xsl:when test="fn:exists(xs:string(xs:integer($var_rowCount_exists + $var_colCount_exists + $var_vrtCount_exists)))">
 											<gco:Integer>
-												<xsl:sequence select="xs:string(xs:integer($var_rowCount_exists + $var_colCount_exists + $var_vrtCount_exists))"/>
+												<xsl:value-of select="xs:string(xs:integer($var_rowCount_exists + $var_colCount_exists + $var_vrtCount_exists))"/>
 											</gco:Integer>
 										</xsl:when>
 										<xsl:otherwise>
@@ -1503,15 +1527,15 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 								<gmd:axisDimensionProperties>
 									<gmd:MD_Dimension>
 										<gmd:dimensionName>
-											<xsl:variable name="var_hasRow" as="xs:string?" select="(if (fn:exists($var_rastinfoNode/rowcount)) then 'row' else ())"/>
-											<xsl:if test="fn:exists($var_hasRow)">
+<!--											<xsl:variable name="var_hasRow"  select="(if (fn:exists($var_rastinfoNode/rowcount)) then 'row' else ())"/>-->
+											<xsl:if test="fn:exists($var_rastinfoNode/rowcount)">
 												<gmd:MD_DimensionNameTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_DimensionNameTypeCode" codeListValue="row" codeSpace="001">row</gmd:MD_DimensionNameTypeCode>
 											</xsl:if>
 										</gmd:dimensionName>
 										<xsl:if test="fn:exists($var_rastinfoNode/rowcount)">
 											<gmd:dimensionSize>
 												<gco:Integer>
-													<xsl:sequence select="xs:string(xs:integer($var_rastinfoNode/rowcount))"/>
+													<xsl:value-of select="xs:string(xs:integer($var_rastinfoNode/rowcount))"/>
 												</gco:Integer>
 											</gmd:dimensionSize>
 										</xsl:if>
@@ -1522,15 +1546,15 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 								<gmd:axisDimensionProperties>
 									<gmd:MD_Dimension>
 										<gmd:dimensionName>
-											<xsl:variable name="var_hasColumn" as="xs:string?" select="(if (fn:exists($var_rastinfoNode/colcount)) then 'column' else ())"/>
-											<xsl:if test="fn:exists($var_hasColumn)">
+<!--											<xsl:variable name="var_hasColumn"  select="(if (fn:exists($var_rastinfoNode/colcount)) then 'column' else ())"/>-->
+											<xsl:if test="fn:exists($var_rastinfoNode/colcount)">
 												<gmd:MD_DimensionNameTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_DimensionNameTypeCode" codeListValue="column" codeSpace="002">column</gmd:MD_DimensionNameTypeCode>
 											</xsl:if>
 										</gmd:dimensionName>
 										<gmd:dimensionSize>
 											<xsl:for-each select="$var_rastinfoNode/colcount">
 												<gco:Integer>
-													<xsl:sequence select="xs:string(xs:integer(.))"/>
+													<xsl:value-of select="xs:string(xs:integer(.))"/>
 												</gco:Integer>
 											</xsl:for-each>
 										</gmd:dimensionSize>
@@ -1542,13 +1566,13 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 									<gmd:axisDimensionProperties>
 										<gmd:MD_Dimension>
 											<gmd:dimensionName>
-												<xsl:variable name="var_hasVertical" as="xs:string?" select="(if (fn:exists($var_rastinfoNode/vrtcount)) then 'vertical' else ())"/>
+												<!--<xsl:variable name="var_hasVertical"  select="(if (fn:exists($var_rastinfoNode/vrtcount)) then 'vertical' else ())"/>-->
 												<gmd:MD_DimensionNameTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_DimensionNameTypeCode" codeListValue="vertical" codeSpace="003">vertical</gmd:MD_DimensionNameTypeCode>
 											</gmd:dimensionName>
 											<gmd:dimensionSize>
 												<xsl:for-each select="$var_rastinfoNode/vrtcount">
 													<gco:Integer>
-														<xsl:sequence select="xs:string(xs:integer(.))"/>
+														<xsl:value-of select="xs:string(xs:integer(.))"/>
 													</gco:Integer>
 												</xsl:for-each>
 											</gmd:dimensionSize>
@@ -1557,7 +1581,7 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 								</xsl:if>
 								<!--</xsl:for-each>-->
 								<!-- determine if input data has a rasttype property and use that to assign cell geometry Type code -->
-								<xsl:variable name="var_rasttypeGeometryType" as="xs:string?">
+								<xsl:variable name="var_rasttypeGeometryType" >
 									<xsl:call-template name="vmf:geometryType">
 										<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(fn:string(rasttype)))"/>
 									</xsl:call-template>
@@ -1567,16 +1591,16 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 									<xsl:when test="fn:exists($var_rasttypeGeometryType)">
 										<gmd:cellGeometry>
 											<gmd:MD_CellGeometryCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CellGeometryCode">
-												<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI($var_rasttypeGeometryType))"/></xsl:attribute>
-												<xsl:variable name="var_rasttypeGeometryCode" as="xs:string?">
+												<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI($var_rasttypeGeometryType))"/></xsl:attribute>
+												<xsl:variable name="var_rasttypeGeometryCode" >
 													<xsl:call-template name="vmf:geometryCode">
 														<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(fn:string(rasttype)))"/>
 													</xsl:call-template>
 												</xsl:variable>
 												<xsl:if test="fn:exists($var_rasttypeGeometryCode)">
-													<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI($var_rasttypeGeometryCode))"/></xsl:attribute>
+													<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI($var_rasttypeGeometryCode))"/></xsl:attribute>
 												</xsl:if>
-												<xsl:sequence select="$var_rasttypeGeometryType"/>
+												<xsl:value-of select="$var_rasttypeGeometryType"/>
 											</gmd:MD_CellGeometryCode>
 										</gmd:cellGeometry>
 									</xsl:when>
@@ -1596,13 +1620,13 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 					<xsl:for-each select="ptvctinf">
 						<!-- Point and Vector Object Information,+ the types and numbers of vector or nongridded point spatial objects in the data set. -->
 						<!-- FGDC xml implements this element as a choice between 1..* sdtsterm elements, or 1 vpfterm -->
-						<!-- xsl:variable name="var_PointVectorObjCountNode" as="node()" select="."/ -->
+						<!-- xsl:variable name="var_PointVectorObjCountNode" select="."/ -->
 						<gmd:spatialRepresentationInfo>
 							<gmd:MD_VectorSpatialRepresentation>
 								<xsl:for-each select="vpfterm">
 									<gmd:topologyLevel>
 										<gmd:MD_TopologyLevelCode>
-											<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI(fn:normalize-space(fn:string(vpflevel))))"/></xsl:attribute>
+											<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI(fn:normalize-space(fn:string(vpflevel))))"/></xsl:attribute>
 										</gmd:MD_TopologyLevelCode>
 									</gmd:topologyLevel>
 								</xsl:for-each>
@@ -1611,132 +1635,134 @@ SMR 2014-11-20  This XSLT does not transform Extensions for Remote Sensing Metad
 									<gmd:geometricObjects>
 										<gmd:MD_GeometricObjects>
 											<gmd:geometricObjectType>
-												<xsl:variable name="sdtsTermTypeList" as="xs:string*">
+												<xsl:variable name="sdtsTermTypeList" >
 													<xsl:for-each select="sdtsterm">
-														<xsl:sequence select="fn:string(sdtstype)"/>
+														<xsl:value-of select="fn:string(sdtstype)"/>
 													</xsl:for-each>
 												</xsl:variable>
-												<xsl:variable name="sdtsTermExists" as="xs:string?">
+												<xsl:variable name="sdtsTermExists" >
 													<xsl:if test="fn:exists($sdtsTermTypeList)">
-														<xsl:variable name="var136_cond_result_exists" as="xs:string?">
+														<xsl:variable name="var136_cond_result_exists" >
 															<xsl:choose>
 																<xsl:when test="fn:exists($sdtsTermTypeList)">
-																	<xsl:variable name="var142_map_select_sdtsterm" as="xs:string*">
+																	<xsl:variable name="var142_map_select_sdtsterm" >
 																		<xsl:for-each select="sdtsterm">
 																			<xsl:if test="fn:exists($sdtsTermTypeList)">
-																				<xsl:sequence select="fn:string(sdtstype)"/>
+																				<xsl:value-of select="fn:string(sdtstype)"/>
 																			</xsl:if>
 																		</xsl:for-each>
 																	</xsl:variable>
 																	<xsl:if test="fn:exists($var142_map_select_sdtsterm)">
-																		<xsl:sequence select="fn:string-join($var142_map_select_sdtsterm, ' ')"/>
+																		<xsl:value-of select="fn:string-join($var142_map_select_sdtsterm, ' ')"/>
 																	</xsl:if>
 																</xsl:when>
 																<xsl:otherwise>
 																	<xsl:for-each select="vpfterm">
-																		<xsl:sequence select="fn:string(vpflevel)"/>
+																		<xsl:value-of select="fn:string(vpflevel)"/>
 																	</xsl:for-each>
 																</xsl:otherwise>
 															</xsl:choose>
 														</xsl:variable>
 														<xsl:for-each select="$var136_cond_result_exists">
-															<xsl:variable name="var139_result_geometryType2" as="xs:string?">
+															<xsl:variable name="var139_result_geometryType2" >
 																<xsl:call-template name="vmf:geometryType2">
 																	<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(fn:string(.)))"/>
 																</xsl:call-template>
 															</xsl:variable>
 															<xsl:if test="fn:exists($var139_result_geometryType2)">
-																<xsl:sequence select="$var139_result_geometryType2"/>
+																<xsl:value-of select="$var139_result_geometryType2"/>
 															</xsl:if>
 														</xsl:for-each>
 													</xsl:if>
 												</xsl:variable>
 												<xsl:if test="fn:exists($sdtsTermExists)">
 													<gmd:MD_GeometricObjectTypeCode>
-														<xsl:variable name="var112_map_select_vpfterm" as="xs:string?">
+														<xsl:variable name="var112_map_select_vpfterm" >
 															<xsl:for-each select="vpfterm">
-																<xsl:sequence select="fn:string(vpflevel)"/>
+																<xsl:value-of select="fn:string(vpflevel)"/>
 															</xsl:for-each>
 														</xsl:variable>
-														<xsl:variable name="var113_map_select_sdtsterm" as="xs:string*">
+														<xsl:variable name="var113_map_select_sdtsterm" >
 															<xsl:for-each select="sdtsterm">
-																<xsl:sequence select="fn:string(sdtstype)"/>
+																<xsl:value-of select="fn:string(sdtstype)"/>
 															</xsl:for-each>
 														</xsl:variable>
-														<xsl:if test="fn:exists((if ((fn:exists($var113_map_select_sdtsterm) or fn:exists($var112_map_select_vpfterm))) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_GeometricObjectTypeCode' else ()))">
-															<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI(fn:string((if ((fn:exists($var113_map_select_sdtsterm) or fn:exists($var112_map_select_vpfterm))) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_GeometricObjectTypeCode' else ()))))"/></xsl:attribute>
+														<xsl:if test="fn:exists($var113_map_select_sdtsterm) or fn:exists($var112_map_select_vpfterm)">
+															<xsl:attribute name="codeList">
+																<xsl:value-of select="xs:string('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_GeometricObjectTypeCode')"/>
+															</xsl:attribute>
 														</xsl:if>
-														<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI(fn:string($sdtsTermExists)))"/></xsl:attribute>
-														<xsl:variable name="var119_map_select_sdtsterm" as="xs:string*">
+														<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI(fn:string($sdtsTermExists)))"/></xsl:attribute>
+														<xsl:variable name="var119_map_select_sdtsterm" >
 															<xsl:for-each select="sdtsterm">
-																<xsl:sequence select="fn:string(sdtstype)"/>
+																<xsl:value-of select="fn:string(sdtstype)"/>
 															</xsl:for-each>
 														</xsl:variable>
-														<xsl:variable name="var118_cond_result_exists" as="xs:string?">
+														<xsl:variable name="var118_cond_result_exists" >
 															<xsl:if test="fn:exists($var119_map_select_sdtsterm)">
-																<xsl:variable name="var121_cond_result_exists" as="xs:string?">
+																<xsl:variable name="var121_cond_result_exists" >
 																	<xsl:choose>
 																		<xsl:when test="fn:exists($var119_map_select_sdtsterm)">
-																			<xsl:variable name="var127_map_select_sdtsterm" as="xs:string*">
+																			<xsl:variable name="var127_map_select_sdtsterm" >
 																				<xsl:for-each select="sdtsterm">
 																					<xsl:if test="fn:exists($var119_map_select_sdtsterm)">
-																						<xsl:sequence select="fn:string(sdtstype)"/>
+																						<xsl:value-of select="fn:string(sdtstype)"/>
 																					</xsl:if>
 																				</xsl:for-each>
 																			</xsl:variable>
 																			<xsl:if test="fn:exists($var127_map_select_sdtsterm)">
-																				<xsl:sequence select="fn:string-join($var127_map_select_sdtsterm, ' ')"/>
+																				<xsl:value-of select="fn:string-join($var127_map_select_sdtsterm, ' ')"/>
 																			</xsl:if>
 																		</xsl:when>
 																		<xsl:otherwise>
 																			<xsl:for-each select="vpfterm">
-																				<xsl:sequence select="fn:string(vpflevel)"/>
+																				<xsl:value-of select="fn:string(vpflevel)"/>
 																			</xsl:for-each>
 																		</xsl:otherwise>
 																	</xsl:choose>
 																</xsl:variable>
 																<xsl:for-each select="$var121_cond_result_exists">
-																	<xsl:variable name="var124_result_geometryCode2" as="xs:string?">
+																	<xsl:variable name="var124_result_geometryCode2" >
 																		<xsl:call-template name="vmf:geometryCode2">
 																			<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(fn:string(.)))"/>
 																		</xsl:call-template>
 																	</xsl:variable>
 																	<xsl:if test="fn:exists($var124_result_geometryCode2)">
-																		<xsl:sequence select="$var124_result_geometryCode2"/>
+																		<xsl:value-of select="$var124_result_geometryCode2"/>
 																	</xsl:if>
 																</xsl:for-each>
 															</xsl:if>
 														</xsl:variable>
 														<xsl:if test="fn:exists($var118_cond_result_exists)">
-															<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI(fn:string($var118_cond_result_exists)))"/></xsl:attribute>
+															<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI(fn:string($var118_cond_result_exists)))"/></xsl:attribute>
 														</xsl:if>
-														<xsl:sequence select="fn:string($sdtsTermExists)"/>
+														<xsl:value-of select="fn:string($sdtsTermExists)"/>
 													</gmd:MD_GeometricObjectTypeCode>
 												</xsl:if>
 											</gmd:geometricObjectType>
 											<gmd:geometricObjectCount>
-												<xsl:variable name="var152_map_select_sdtsterm" as="xs:string*">
+												<xsl:variable name="var152_map_select_sdtsterm" >
 													<xsl:for-each select="sdtsterm/ptvctcnt">
-														<xsl:sequence select="xs:string(xs:integer(.))"/>
+														<xsl:value-of select="xs:string(xs:integer(.))"/>
 													</xsl:for-each>
 												</xsl:variable>
-												<xsl:variable name="var149_cond_result_exists" as="xs:string*">
+												<xsl:variable name="var149_cond_result_exists" >
 													<xsl:choose>
 														<xsl:when test="fn:exists($var152_map_select_sdtsterm)">
 															<xsl:for-each select="sdtsterm/ptvctcnt">
-																<xsl:sequence select="xs:string(xs:integer(.))"/>
+																<xsl:value-of select="xs:string(xs:integer(.))"/>
 															</xsl:for-each>
 														</xsl:when>
 														<xsl:otherwise>
 															<xsl:for-each select="vpfterm/vpfinfo/ptvctcnt">
-																<xsl:sequence select="xs:string(xs:integer(.))"/>
+																<xsl:value-of select="xs:string(xs:integer(.))"/>
 															</xsl:for-each>
 														</xsl:otherwise>
 													</xsl:choose>
 												</xsl:variable>
 												<xsl:for-each select="$var149_cond_result_exists">
 													<gco:Integer>
-														<xsl:sequence select="xs:string(xs:integer(.))"/>
+														<xsl:value-of select="xs:string(xs:integer(.))"/>
 													</gco:Integer>
 												</xsl:for-each>
 											</gmd:geometricObjectCount>
@@ -1788,7 +1814,7 @@ addresses, linear reference systems, and River Reach codes. -->
 									<!-- smr change gmd:CodeSpace to gmd:code -->
 									<gmd:code>
 										<gco:CharacterString>
-											<!-- xsl:sequence select="xs:string(.)"/ -->
+											<!-- xsl:value-of select="xs:string(.)"/ -->
 											http://www.opengis.net/def/nil/OGC/0/missing
 										</gco:CharacterString>
 									</gmd:code>
@@ -1805,23 +1831,23 @@ addresses, linear reference systems, and River Reach codes. -->
 						<gmd:CI_OnlineResource>
 							<gmd:linkage>
 								<gmd:URL>
-									<xsl:variable name="CIlinkURL" as="xs:integer">
+									<xsl:variable name="CIlinkURL" >
 										<xsl:value-of select="xs:integer(fn:count(/metadata/metainfo/metextns[1]/onlink))"/>
 									</xsl:variable>
 									<xsl:for-each select="/metadata/metainfo/metextns[1]/onlink">
-										<xsl:sequence select="xs:string(xs:anyURI(fn:normalize-space(xs:string(.))))"/>
+										<xsl:value-of select="xs:string(xs:anyURI(fn:normalize-space(xs:string(.))))"/>
 										<xsl:if test="($CIlinkURL>1)">
 											<xsl:value-of select="xs:string(' ')"/>
 										</xsl:if>
 									</xsl:for-each>
 									<!--xsl:value-of select="$var_metadataRoot/metainfo/metextns/onlink"/>
-										<xsl:sequence select="xs:string(xs:anyURI(fn:normalize-space(xs:string(.))))"/> -->
+										<xsl:value-of select="xs:string(xs:anyURI(fn:normalize-space(xs:string(.))))"/> -->
 								</gmd:URL>
 							</gmd:linkage>
 							<xsl:for-each select="metprof">
 								<gmd:name>
 									<gco:CharacterString>
-										<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+										<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 									</gco:CharacterString>
 								</gmd:name>
 							</xsl:for-each>
@@ -1832,18 +1858,18 @@ addresses, linear reference systems, and River Reach codes. -->
 			<!-- FGDC id metadata/idinfo goes into MD_identification -->
 			<xsl:for-each select="$var_metadataRoot">
 				<xsl:for-each select="idinfo">
-					<xsl:variable name="var_idinfoSourceNode" as="node()" select="."/>
+					<xsl:variable name="var_idinfoSourceNode" select="."/>
 					<gmd:identificationInfo>
 						<gmd:MD_DataIdentification>
 							<xsl:for-each select="citation">
 								<gmd:citation>
 									<xsl:for-each select="citeinfo">
-										<xsl:variable name="var_citeinfoSourceNode" as="node()" select="."/>
+										<xsl:variable name="var_citeinfoSourceNode" select="."/>
 										<gmd:CI_Citation>
 											<gmd:title>
 												<xsl:for-each select="title">
 													<gco:CharacterString>
-														<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+														<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 													</gco:CharacterString>
 												</xsl:for-each>
 											</gmd:title>
@@ -1855,9 +1881,9 @@ addresses, linear reference systems, and River Reach codes. -->
 															<xsl:with-param name="inputTime" select="pubtime"/>
 														</xsl:call-template>
 													</gmd:date>
-													<xsl:variable name="var_pubdate_exists" as="xs:string?" select="(if (fn:exists(pubdate)) then 'publication' else ())"/>
+<!--													<xsl:variable name="var_pubdate_exists"  select="(if (fn:exists(pubdate)) then 'publication' else ())"/>-->
 													<xsl:choose>
-														<xsl:when test="fn:exists($var_pubdate_exists)">
+														<xsl:when test="fn:exists(pubdate)">
 															<gmd:dateType>
 																<gmd:CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication" codeSpace="002">publication</gmd:CI_DateTypeCode>
 															</gmd:dateType>
@@ -1871,7 +1897,7 @@ addresses, linear reference systems, and River Reach codes. -->
 											<xsl:for-each select="edition">
 												<gmd:edition>
 													<gco:CharacterString>
-														<xsl:sequence select="xs:string(.)"/>
+														<xsl:value-of select="xs:string(.)"/>
 													</gco:CharacterString>
 												</gmd:edition>
 											</xsl:for-each>
@@ -1892,7 +1918,7 @@ addresses, linear reference systems, and River Reach codes. -->
 														</gmd:authority>
 														<gmd:code>
 															<gco:CharacterString>
-																<xsl:sequence select="xs:string(.)"/>
+																<xsl:value-of select="xs:string(.)"/>
 															</gco:CharacterString>
 														</gmd:code>
 													</gmd:MD_Identifier>
@@ -1911,9 +1937,9 @@ addresses, linear reference systems, and River Reach codes. -->
 													<gmd:code>
 														<gco:CharacterString>
 															<xsl:for-each select="$var_idinfoSourceNode/citation/citeinfo/onlink">
-																<xsl:sequence select="fn:concat(fn:normalize-space(xs:string(.)),' ')"/>
+																<xsl:value-of select="fn:concat(fn:normalize-space(xs:string(.)),' ')"/>
 															</xsl:for-each>
-															<!-- xsl:sequence select="xs:string($var_idinfoSourceNode/citation/citeinfo/onlink)"/ -->
+															<!-- xsl:value-of select="xs:string($var_idinfoSourceNode/citation/citeinfo/onlink)"/ -->
 														</gco:CharacterString>
 													</gmd:code>
 												</gmd:MD_Identifier>
@@ -1923,11 +1949,11 @@ addresses, linear reference systems, and River Reach codes. -->
 													<gmd:organisationName>
 														<!--	<xsl:for-each select="origin"> -->
 														<gco:CharacterString>
-															<xsl:variable name="orgCount" as="xs:integer">
+															<xsl:variable name="orgCount" >
 																<xsl:value-of select="xs:integer(fn:count(origin))"/>
 															</xsl:variable>
 															<xsl:for-each select="origin">
-																<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																<xsl:if test="($orgCount>1)">
 																	<xsl:value-of select="xs:string(' ')"/>
 																</xsl:if>
@@ -1941,67 +1967,67 @@ addresses, linear reference systems, and River Reach codes. -->
 												</gmd:CI_ResponsibleParty>
 											</gmd:citedResponsibleParty>
 											<gmd:presentationForm>
-												<xsl:variable name="var342_cond_result_exists" as="xs:string?">
+												<xsl:variable name="var342_cond_result_exists" >
 													<xsl:choose>
 														<xsl:when test="$var_citeinfoSourceNode/geoform">
-															<xsl:variable name="var356_map_select_geoform" as="xs:string*">
+															<xsl:variable name="var356_map_select_geoform" >
 																<xsl:for-each select="geoform">
-																	<xsl:variable name="var359_result_docType" as="xs:string?">
+																	<xsl:variable name="var359_result_docType" >
 																		<xsl:call-template name="vmf:docType">
 																			<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(.)))"/>
 																		</xsl:call-template>
 																	</xsl:variable>
 																	<xsl:if test="fn:exists($var359_result_docType)">
-																		<xsl:sequence select="$var359_result_docType"/>
+																		<xsl:value-of select="$var359_result_docType"/>
 																	</xsl:if>
 																</xsl:for-each>
 															</xsl:variable>
 															<xsl:if test="fn:exists($var356_map_select_geoform)">
-																<xsl:sequence select="xs:string(fn:string-join($var356_map_select_geoform, ' '))"/>
+																<xsl:value-of select="xs:string(fn:string-join($var356_map_select_geoform, ' '))"/>
 															</xsl:if>
 														</xsl:when>
 														<xsl:otherwise>
-															<xsl:variable name="var360_map_select_geoform" as="xs:string*">
+															<xsl:variable name="var360_map_select_geoform" >
 																<xsl:for-each select="geoform">
-			xs:string(												)		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+			xs:string(												)		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																</xsl:for-each>
 															</xsl:variable>
 															<xsl:if test="fn:exists($var360_map_select_geoform)">
-																<xsl:sequence select="xs:string(fn:string-join($var360_map_select_geoform, ' '))"/>
+																<xsl:value-of select="xs:string(fn:string-join($var360_map_select_geoform, ' '))"/>
 															</xsl:if>
 														</xsl:otherwise>
 													</xsl:choose>
 												</xsl:variable>
 												<xsl:for-each select="$var342_cond_result_exists">
 													<gmd:CI_PresentationFormCode>
-														<xsl:variable name="var345_cond_result_exists" as="xs:string?" select="(if (fn:exists($var_citeinfoSourceNode/geoform)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode' else ())"/>
-														<xsl:if test="fn:exists($var345_cond_result_exists)">
-															<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI($var345_cond_result_exists))"/></xsl:attribute>
+<!--														<xsl:variable name="var345_cond_result_exists"  select="(if (fn:exists($var_citeinfoSourceNode/geoform)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode' else ())"/>-->
+														<xsl:if test="fn:exists($var_citeinfoSourceNode/geoform)">
+															<xsl:attribute name="codeList"><xsl:value-of select="xs:string('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode')"/></xsl:attribute>
 														</xsl:if>
-														<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI(.))"/></xsl:attribute>
-														<xsl:variable name="var346_cond_result_exists" as="xs:string?">
+														<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
+														<xsl:variable name="var346_cond_result_exists" >
 															<xsl:if test="$var_citeinfoSourceNode/geoform">
-																<xsl:variable name="var350_map_select_geoform" as="xs:string*">
+																<xsl:variable name="var350_map_select_geoform" >
 																	<xsl:for-each select="$var_citeinfoSourceNode/geoform">
-																		<xsl:variable name="var353_result_docCode" as="xs:string?">
+																		<xsl:variable name="var353_result_docCode" >
 																			<xsl:call-template name="vmf:docCode">
 																				<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(xs:string(.))))"/>
 																			</xsl:call-template>
 																		</xsl:variable>
 																		<xsl:if test="fn:exists($var353_result_docCode)">
-																			<xsl:sequence select="$var353_result_docCode"/>
+																			<xsl:value-of select="$var353_result_docCode"/>
 																		</xsl:if>
 																	</xsl:for-each>
 																</xsl:variable>
 																<xsl:if test="fn:exists($var350_map_select_geoform)">
-																	<xsl:sequence select="xs:string(fn:string-join($var350_map_select_geoform, ' '))"/>
+																	<xsl:value-of select="xs:string(fn:string-join($var350_map_select_geoform, ' '))"/>
 																</xsl:if>
 															</xsl:if>
 														</xsl:variable>
 														<xsl:for-each select="$var346_cond_result_exists">
-															<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI(.))"/></xsl:attribute>
+															<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
 														</xsl:for-each>
-														<xsl:sequence select="."/>
+														<xsl:value-of select="."/>
 													</gmd:CI_PresentationFormCode>
 												</xsl:for-each>
 											</gmd:presentationForm>
@@ -2011,14 +2037,14 @@ addresses, linear reference systems, and River Reach codes. -->
 														<gmd:name>
 															<xsl:for-each select="sername">
 																<gco:CharacterString>
-																	<xsl:sequence select="xs:string(.)"/>
+																	<xsl:value-of select="xs:string(.)"/>
 																</gco:CharacterString>
 															</xsl:for-each>
 														</gmd:name>
 														<gmd:issueIdentification>
 															<xsl:for-each select="issue">
 																<gco:CharacterString>
-																	<xsl:sequence select="xs:string(.)"/>
+																	<xsl:value-of select="xs:string(.)"/>
 																</gco:CharacterString>
 															</xsl:for-each>
 														</gmd:issueIdentification>
@@ -2028,7 +2054,7 @@ addresses, linear reference systems, and River Reach codes. -->
 											<xsl:for-each select="othercit">
 												<gmd:otherCitationDetails>
 													<gco:CharacterString>
-														<xsl:sequence select="xs:string(.)"/>
+														<xsl:value-of select="xs:string(.)"/>
 													</gco:CharacterString>
 												</gmd:otherCitationDetails>
 											</xsl:for-each>
@@ -2041,7 +2067,7 @@ addresses, linear reference systems, and River Reach codes. -->
 								<gco:CharacterString>
 									<xsl:choose>
 										<xsl:when test="fn:exists(descript/abstract) and string-length(xs:string(descript/abstract))>0">
-											<xsl:sequence select="fn:normalize-space(xs:string(descript/abstract))"/>
+											<xsl:value-of select="fn:normalize-space(xs:string(descript/abstract))"/>
 										</xsl:when>
 										<xsl:otherwise>
 											<xsl:value-of select="xs:string('no abstract provided')"/>
@@ -2426,84 +2452,98 @@ Overview_Description: <xsl:for-each select="eaover">
 							<xsl:for-each select="descript/purpose">
 								<gmd:purpose>
 									<gco:CharacterString>
-										<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+										<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 									</gco:CharacterString>
 								</gmd:purpose>
 							</xsl:for-each>
 							<xsl:for-each select="datacred">
 								<gmd:credit>
 									<gco:CharacterString>
-										<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+										<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 									</gco:CharacterString>
 								</gmd:credit>
 							</xsl:for-each>
 							<gmd:status>
-								<!-- xsl:variable name="var395_map_select_status" as="xs:string*">
+								<!-- xsl:variable name="var395_map_select_status" >
 									<xsl:for-each select="status/progress">
-										<xsl:sequence select="xs:string(.)"/>
+										<xsl:value-of select="xs:string(.)"/>
 									</xsl:for-each>
 								</xsl:variable -->
-								<xsl:variable name="var_checkHasStatusProgress" as="xs:string?">
+								<xsl:variable name="var_checkHasStatusProgress" >
 									<xsl:choose>
 										<xsl:when test="fn:exists(status/progress)">
-											<xsl:variable name="var_checkStatusProgress" as="xs:string*">
+											<xsl:variable name="var_checkStatusProgress" >
 												<xsl:for-each select="status/progress">
-													<xsl:variable name="var_checkStatusTypeLookup" as="xs:string?">
+													<xsl:variable name="var_checkStatusTypeLookup" >
 														<xsl:call-template name="vmf:statusType">
 															<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(.)))"/>
 														</xsl:call-template>
 													</xsl:variable>
 													<xsl:if test="fn:exists($var_checkStatusTypeLookup)">
-														<xsl:sequence select="$var_checkStatusTypeLookup"/>
+														<xsl:value-of select="$var_checkStatusTypeLookup"/>
 													</xsl:if>
 												</xsl:for-each>
 											</xsl:variable>
 											<xsl:if test="fn:exists($var_checkStatusProgress)">
-												<xsl:sequence select="xs:string(fn:string-join($var_checkStatusProgress, ' '))"/>
+												<xsl:value-of select="xs:string(fn:string-join($var_checkStatusProgress, ' '))"/>
 											</xsl:if>
 										</xsl:when>
 										<xsl:otherwise>
-											<xsl:sequence select="''"/>
+											<xsl:value-of select="''"/>
 										</xsl:otherwise>
 									</xsl:choose>
 								</xsl:variable>
 								<xsl:for-each select="$var_checkHasStatusProgress">
 									<gmd:MD_ProgressCode>
-										<xsl:attribute name="codeList"><xsl:variable name="var381_map_select_status" as="xs:string*"><xsl:for-each select="$var_idinfoSourceNode/status/progress"><xsl:sequence select="xs:string(.)"/></xsl:for-each></xsl:variable><xsl:variable name="var380_cond_result_exists" as="xs:string" select="(if (fn:exists($var381_map_select_status)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ProgressCode' else '')"/><xsl:sequence select="xs:string(xs:anyURI($var380_cond_result_exists))"/></xsl:attribute>
-										<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI(.))"/></xsl:attribute>
-										<xsl:variable name="var387_map_select_status" as="xs:string*">
+										<xsl:attribute name="codeList">
+											<xsl:choose>
+												<xsl:when test="fn:exists($var_idinfoSourceNode/status/progress)">
+													<xsl:value-of select="string('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ProgressCode')"/>
+												</xsl:when>
+												<xsl:otherwise><xsl:value-of select="string('http://www.opengis.net/def/nil/OGC/0/missing')"/></xsl:otherwise>
+											</xsl:choose>
+<!--											<xsl:variable name="var381_map_select_status" >
+												<xsl:for-each select="$var_idinfoSourceNode/status/progress">
+													<xsl:value-of select="xs:string(.)"/>
+												</xsl:for-each>
+											</xsl:variable>
+											<xsl:variable name="var380_cond_result_exists"  select="(if (fn:exists($var381_map_select_status)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ProgressCode' else '')"/>
+											<xsl:value-of select="xs:string(xs:anyURI($var380_cond_result_exists))"/>-->
+										</xsl:attribute>
+										<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
+										<xsl:variable name="var387_map_select_status" >
 											<xsl:for-each select="$var_idinfoSourceNode/status/progress">
-												<xsl:sequence select="xs:string(.)"/>
+												<xsl:value-of select="xs:string(.)"/>
 											</xsl:for-each>
 										</xsl:variable>
-										<xsl:variable name="var384_cond_result_exists" as="xs:string?">
+										<xsl:variable name="var384_cond_result_exists" >
 											<xsl:choose>
 												<xsl:when test="fn:exists($var387_map_select_status)">
-													<xsl:variable name="var389_map_select_status" as="xs:string*">
+													<xsl:variable name="var389_map_select_status" >
 														<xsl:for-each select="$var_idinfoSourceNode/status/progress">
-															<xsl:variable name="var392_result_statusCode" as="xs:string?">
+															<xsl:variable name="var392_result_statusCode" >
 																<xsl:call-template name="vmf:statusCode">
 																	<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(.)))"/>
 																</xsl:call-template>
 															</xsl:variable>
 															<xsl:if test="fn:exists($var392_result_statusCode)">
-																<xsl:sequence select="$var392_result_statusCode"/>
+																<xsl:value-of select="$var392_result_statusCode"/>
 															</xsl:if>
 														</xsl:for-each>
 													</xsl:variable>
 													<xsl:if test="fn:exists($var389_map_select_status)">
-														<xsl:sequence select="xs:string(fn:string-join($var389_map_select_status, ' '))"/>
+														<xsl:value-of select="xs:string(fn:string-join($var389_map_select_status, ' '))"/>
 													</xsl:if>
 												</xsl:when>
 												<xsl:otherwise>
-													<xsl:sequence select="''"/>
+													<xsl:value-of select="''"/>
 												</xsl:otherwise>
 											</xsl:choose>
 										</xsl:variable>
 										<xsl:for-each select="$var384_cond_result_exists">
-											<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI(.))"/></xsl:attribute>
+											<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
 										</xsl:for-each>
-										<xsl:sequence select="."/>
+										<xsl:value-of select="."/>
 									</gmd:MD_ProgressCode>
 								</xsl:for-each>
 							</gmd:status>
@@ -2511,33 +2551,33 @@ Overview_Description: <xsl:for-each select="eaover">
 								<gmd:pointOfContact>
 									<!-- ptcontac/cntinfo -->
 									<xsl:for-each select="cntinfo">
-										<!-- xsl:variable name="var_ptcontac-cntinfo_node" as="node()" select="."/ -->
+										<!-- xsl:variable name="var_ptcontac-cntinfo_node" select="."/ -->
 										<gmd:CI_ResponsibleParty>
 											<!-- gmd:individualName -->
-											<xsl:variable name="var_cntIndividualName" as="xs:string*">
+											<xsl:variable name="var_cntIndividualName" >
 												<xsl:choose>
 													<xsl:when test="fn:exists(cntperp/cntper)">
 														<xsl:for-each select="cntperp/cntper">
-															<xsl:sequence select="xs:string(.)"/>
+															<xsl:value-of select="xs:string(.)"/>
 														</xsl:for-each>
 													</xsl:when>
 													<xsl:otherwise>
 														<xsl:for-each select="cntorgp/cntper">
-															<xsl:sequence select="xs:string(.)"/>
+															<xsl:value-of select="xs:string(.)"/>
 														</xsl:for-each>
 													</xsl:otherwise>
 												</xsl:choose>
 											</xsl:variable>
-											<xsl:variable name="var_cntOrgName" as="xs:string*">
+											<xsl:variable name="var_cntOrgName" >
 												<xsl:choose>
 													<xsl:when test="fn:exists(cntperp/cntorg)">
 														<xsl:for-each select="cntperp/cntorg">
-															<xsl:sequence select="xs:string(.)"/>
+															<xsl:value-of select="xs:string(.)"/>
 														</xsl:for-each>
 													</xsl:when>
 													<xsl:otherwise>
 														<xsl:for-each select="cntorgp/cntorg">
-															<xsl:sequence select="xs:string(.)"/>
+															<xsl:value-of select="xs:string(.)"/>
 														</xsl:for-each>
 													</xsl:otherwise>
 												</xsl:choose>
@@ -2557,14 +2597,14 @@ Overview_Description: <xsl:for-each select="eaover">
 															<gmd:voice>
 																<xsl:for-each select="cntvoice">
 																	<gco:CharacterString>
-																		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																	</gco:CharacterString>
 																</xsl:for-each>
 															</gmd:voice>
 															<gmd:facsimile>
 																<xsl:for-each select="cntfax">
 																	<gco:CharacterString>
-																		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																	</gco:CharacterString>
 																</xsl:for-each>
 															</gmd:facsimile>
@@ -2579,35 +2619,35 @@ Overview_Description: <xsl:for-each select="eaover">
 															<!-- xsl:for-each select="cntaddr/address">
 																<gmd:deliveryPoint>
 																	<gco:CharacterString>
-																		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																	</gco:CharacterString>
 																</gmd:deliveryPoint>
 															</xsl:for-each>
 															<xsl:for-each select="cntaddr/city">
 																<gmd:city>
 																	<gco:CharacterString>
-																		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																	</gco:CharacterString>
 																</gmd:city>
 															</xsl:for-each>
 															<xsl:for-each select="cntaddr/state">
 																<gmd:administrativeArea>
 																	<gco:CharacterString>
-																		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																	</gco:CharacterString>
 																</gmd:administrativeArea>
 															</xsl:for-each>
 															<xsl:for-each select="cntaddr/postal">
 																<gmd:postalCode>
 																	<gco:CharacterString>
-																		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																	</gco:CharacterString>
 																</gmd:postalCode>
 															</xsl:for-each>
 															<xsl:for-each select="cntaddr/country">
 																<gmd:country>
 																	<gco:CharacterString>
-																		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																	</gco:CharacterString>
 																</gmd:coun try>
 															</xsl:for-each -->
@@ -2617,7 +2657,7 @@ Overview_Description: <xsl:for-each select="eaover">
 																</xsl:call-template>
 																<!-- gmd:electronicMailAddress>
 																	<gco:CharacterString>
-																		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																	</gco:CharacterString>
 																</gmd:electronicMailAddress -->
 															</xsl:for-each>
@@ -2626,14 +2666,14 @@ Overview_Description: <xsl:for-each select="eaover">
 													<xsl:for-each select="hours">
 														<gmd:hoursOfService>
 															<gco:CharacterString>
-																<xsl:sequence select="xs:string(.)"/>
+																<xsl:value-of select="xs:string(.)"/>
 															</gco:CharacterString>
 														</gmd:hoursOfService>
 													</xsl:for-each>
 													<xsl:for-each select="cntinst">
 														<gmd:contactInstructions>
 															<gco:CharacterString>
-																<xsl:sequence select="xs:string(.)"/>
+																<xsl:value-of select="xs:string(.)"/>
 															</gco:CharacterString>
 														</gmd:contactInstructions>
 													</xsl:for-each>
@@ -2641,10 +2681,10 @@ Overview_Description: <xsl:for-each select="eaover">
 											</gmd:contactInfo>
 											<gmd:role>
 												<gmd:CI_RoleCode>
-													<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode'))"/></xsl:attribute>
-													<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI('pointOfContact'))"/></xsl:attribute>
-													<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI('007'))"/></xsl:attribute>
-													<xsl:sequence select="'pointOfContact'"/>
+													<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode'))"/></xsl:attribute>
+													<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI('pointOfContact'))"/></xsl:attribute>
+													<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI('007'))"/></xsl:attribute>
+													<xsl:value-of select="'pointOfContact'"/>
 												</gmd:CI_RoleCode>
 											</gmd:role>
 										</gmd:CI_ResponsibleParty>
@@ -2655,26 +2695,29 @@ Overview_Description: <xsl:for-each select="eaover">
 							<gmd:resourceMaintenance>
 								<gmd:MD_MaintenanceInformation>
 									<gmd:maintenanceAndUpdateFrequency>
-										<xsl:variable name="var338_result_vmf11_inputtoresult" as="xs:string?">
+										<xsl:variable name="var338_result_vmf11_inputtoresult" >
 											<xsl:call-template name="vmf:updateFrequency">
 												<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(status/update)))"/>
 											</xsl:call-template>
 										</xsl:variable>
-										<xsl:variable name="var335_cond_result_exists" as="xs:string?" select="(if (fn:exists($var338_result_vmf11_inputtoresult)) then $var338_result_vmf11_inputtoresult else ())"/>
-										<xsl:if test="fn:exists($var335_cond_result_exists)">
+<!--										<xsl:variable name="var335_cond_result_exists"  select="(if (fn:exists($var338_result_vmf11_inputtoresult)) then $var338_result_vmf11_inputtoresult else ())"/>-->
+										<xsl:if test="fn:exists($var338_result_vmf11_inputtoresult)">
 											<gmd:MD_MaintenanceFrequencyCode>
-												<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode'))"/></xsl:attribute>
-												<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI($var335_cond_result_exists))"/></xsl:attribute>
-												<xsl:variable name="var337_result_vmf12_inputtoresult" as="xs:string?">
+												<xsl:attribute name="codeList">
+													<xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode'))"/></xsl:attribute>
+												<xsl:attribute name="codeListValue">
+													<xsl:value-of select="xs:string($var338_result_vmf11_inputtoresult)"/></xsl:attribute>
+												<xsl:variable name="var337_result_vmf12_inputtoresult" >
 													<xsl:call-template name="vmf:updateFrequencyCode">
 														<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(xs:string(idinfo/status/update))))"/>
 													</xsl:call-template>
 												</xsl:variable>
-												<xsl:variable name="var336_cond_result_exists" as="xs:string?" select="(if (fn:exists($var337_result_vmf12_inputtoresult)) then $var337_result_vmf12_inputtoresult else ())"/>
-												<xsl:if test="fn:exists($var336_cond_result_exists)">
-													<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI($var336_cond_result_exists))"/></xsl:attribute>
+<!--												<xsl:variable name="var336_cond_result_exists"  select="(if (fn:exists($var337_result_vmf12_inputtoresult)) then $var337_result_vmf12_inputtoresult else ())"/>-->
+												<xsl:if test="fn:exists($var337_result_vmf12_inputtoresult)">
+													<xsl:attribute name="codeSpace">
+														<xsl:value-of select="xs:string($var337_result_vmf12_inputtoresult)"/></xsl:attribute>
 												</xsl:if>
-												<xsl:sequence select="$var335_cond_result_exists"/>
+												<xsl:value-of select="$var338_result_vmf11_inputtoresult"/>
 											</gmd:MD_MaintenanceFrequencyCode>
 										</xsl:if>
 									</gmd:maintenanceAndUpdateFrequency>
@@ -2684,33 +2727,37 @@ Overview_Description: <xsl:for-each select="eaover">
 								<gmd:resourceMaintenance>
 									<gmd:MD_MaintenanceInformation>
 										<gmd:maintenanceAndUpdateFrequency>
-											<xsl:variable name="var344_result_vmf11_inputtoresult" as="xs:string?">
+											<xsl:variable name="var344_result_vmf11_inputtoresult" >
 												<xsl:call-template name="vmf:updateFrequency">
 													<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(.)))"/>
 												</xsl:call-template>
 											</xsl:variable>
-											<xsl:variable name="var341_cond_result_exists" as="xs:string?" select="(if (fn:exists($var344_result_vmf11_inputtoresult)) then $var344_result_vmf11_inputtoresult else ())"/>
-											<xsl:if test="fn:exists($var341_cond_result_exists)">
+<!--											<xsl:variable name="var341_cond_result_exists"  select="(if (fn:exists($var344_result_vmf11_inputtoresult)) then $var344_result_vmf11_inputtoresult else ())"/>-->
+											<xsl:if test="fn:exists($var344_result_vmf11_inputtoresult)">
 												<gmd:MD_MaintenanceFrequencyCode>
-													<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode'))"/></xsl:attribute>
-													<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI($var341_cond_result_exists))"/></xsl:attribute>
-													<xsl:variable name="var343_result_vmf12_inputtoresult" as="xs:string?">
+													<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode'))"/></xsl:attribute>
+													<xsl:attribute name="codeListValue">
+														<xsl:value-of select="xs:string($var344_result_vmf11_inputtoresult)"/>
+													</xsl:attribute>
+													<xsl:variable name="var343_result_vmf12_inputtoresult" >
 														<xsl:call-template name="vmf:updateFrequencyCode">
 															<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(xs:string(.))))"/>
 														</xsl:call-template>
 													</xsl:variable>
-													<xsl:variable name="var342_cond_result_exists" as="xs:string?" select="(if (fn:exists($var343_result_vmf12_inputtoresult)) then $var343_result_vmf12_inputtoresult else ())"/>
-													<xsl:if test="fn:exists($var342_cond_result_exists)">
-														<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI($var342_cond_result_exists))"/></xsl:attribute>
+<!--													<xsl:variable name="var342_cond_result_exists"  select="(if (fn:exists($var343_result_vmf12_inputtoresult)) then $var343_result_vmf12_inputtoresult else ())"/>-->
+													<xsl:if test="fn:exists($var343_result_vmf12_inputtoresult)">
+														<xsl:attribute name="codeSpace">
+															<xsl:value-of select="xs:string($var343_result_vmf12_inputtoresult)"/>
+														</xsl:attribute>
 													</xsl:if>
-													<xsl:sequence select="$var341_cond_result_exists"/>
+													<xsl:value-of select="$var344_result_vmf11_inputtoresult"/>
 												</gmd:MD_MaintenanceFrequencyCode>
 											</xsl:if>
 										</gmd:maintenanceAndUpdateFrequency>
 										<gmd:updateScope>
 											<gmd:MD_ScopeCode>
-												<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ScopeCode'))"/></xsl:attribute>
-												<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI('attribute'))"/></xsl:attribute>
+												<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ScopeCode'))"/></xsl:attribute>
+												<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI('attribute'))"/></xsl:attribute>
 											</gmd:MD_ScopeCode>
 										</gmd:updateScope>
 									</gmd:MD_MaintenanceInformation>
@@ -2721,21 +2768,21 @@ Overview_Description: <xsl:for-each select="eaover">
 								<gmd:graphicOverview>
 									<gmd:MD_BrowseGraphic>
 										<gmd:fileName>
-											<xsl:for-each-group select="." group-by="xs:string(browsen)">
-												<xsl:variable name="var349_cur_result_groupby" as="xs:string" select="current-grouping-key()"/>
+<!--											<xsl:for-each-group select="." group-by="xs:string(browsen)">
+												<xsl:variable name="var349_cur_result_groupby"  select="current-grouping-key()"/>-->
 												<gco:CharacterString>
-													<xsl:sequence select="$var349_cur_result_groupby"/>
+													<xsl:value-of select="xs:string(browsen)"/>											<!--		<xsl:value-of select="$var349_cur_result_groupby"/>-->
 												</gco:CharacterString>
-											</xsl:for-each-group>
+<!--											</xsl:for-each-group>-->
 										</gmd:fileName>
 										<gmd:fileDescription>
 											<gco:CharacterString>
-												<xsl:sequence select="xs:string(browsed)"/>
+												<xsl:value-of select="xs:string(browsed)"/>
 											</gco:CharacterString>
 										</gmd:fileDescription>
 										<gmd:fileType>
 											<gco:CharacterString>
-												<xsl:sequence select="xs:string(xs:string(browset))"/>
+												<xsl:value-of select="xs:string(browset)"/>
 											</gco:CharacterString>
 										</gmd:fileType>
 									</gmd:MD_BrowseGraphic>
@@ -2747,30 +2794,30 @@ Overview_Description: <xsl:for-each select="eaover">
 								<xsl:when test="fn:exists(keywords/theme/themekt)">
 									<xsl:for-each-group select="keywords/theme" group-by="(if (fn:contains(xs:string(themekt), 'ISO 19115')) then () else xs:string(themekt))">
 										<xsl:variable name="var352_cur_result_groupby" as="item()+" select="current-group()"/>
-										<xsl:variable name="var353_cur_result_groupby" as="xs:string" select="current-grouping-key()"/>
+										<xsl:variable name="var353_cur_result_groupby"  select="current-grouping-key()"/>
 										<gmd:descriptiveKeywords>
 											<gmd:MD_Keywords>
 												<xsl:for-each select="$var352_cur_result_groupby/themekey">
 													<gmd:keyword>
 														<gco:CharacterString>
-															<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+															<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 														</gco:CharacterString>
 													</gmd:keyword>
 												</xsl:for-each>
 												<gmd:type>
 													<gmd:MD_KeywordTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme" codeSpace="005">
-														<xsl:sequence select="'theme'"/>
+														<xsl:value-of select="'theme'"/>
 													</gmd:MD_KeywordTypeCode>
 												</gmd:type>
 												<gmd:thesaurusName>
 													<gmd:CI_Citation>
 														<gmd:title>
 															<gco:CharacterString>
-																<xsl:sequence select="fn:normalize-space($var353_cur_result_groupby)"/>
+																<xsl:value-of select="fn:normalize-space($var353_cur_result_groupby)"/>
 															</gco:CharacterString>
 														</gmd:title>
 														<gmd:date>
-															<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string('unknown')"/></xsl:attribute>
+															<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
 														</gmd:date>
 													</gmd:CI_Citation>
 												</gmd:thesaurusName>
@@ -2786,13 +2833,13 @@ Overview_Description: <xsl:for-each select="eaover">
 												<xsl:for-each select="themekey">
 													<gmd:keyword>
 														<gco:CharacterString>
-															<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+															<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 														</gco:CharacterString>
 													</gmd:keyword>
 												</xsl:for-each>
 												<gmd:type>
 													<gmd:MD_KeywordTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme" codeSpace="005">
-														<xsl:sequence select="'theme'"/>
+														<xsl:value-of select="'theme'"/>
 													</gmd:MD_KeywordTypeCode>
 												</gmd:type>
 												<gmd:thesaurusName gco:nilReason="missing"/>
@@ -2806,30 +2853,30 @@ Overview_Description: <xsl:for-each select="eaover">
 								<xsl:when test="fn:exists(keywords/place/placekt)">
 									<xsl:for-each-group select="keywords/place" group-by="xs:string(xs:string(placekt))">
 										<xsl:variable name="var_placeKeywordList" as="item()+" select="current-group()"/>
-										<xsl:variable name="var_placeGroupKeyValue" as="xs:string" select="current-grouping-key()"/>
+										<xsl:variable name="var_placeGroupKeyValue"  select="current-grouping-key()"/>
 										<gmd:descriptiveKeywords>
 											<gmd:MD_Keywords>
 												<xsl:for-each select="$var_placeKeywordList/placekey">
 													<gmd:keyword>
 														<gco:CharacterString>
-															<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+															<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 														</gco:CharacterString>
 													</gmd:keyword>
 												</xsl:for-each>
 												<gmd:type>
 													<gmd:MD_KeywordTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="place" codeSpace="002">
-														<xsl:sequence select="'place'"/>
+														<xsl:value-of select="'place'"/>
 													</gmd:MD_KeywordTypeCode>
 												</gmd:type>
 												<gmd:thesaurusName>
 													<gmd:CI_Citation>
 														<gmd:title>
 															<gco:CharacterString>
-																<xsl:sequence select="fn:normalize-space($var_placeGroupKeyValue)"/>
+																<xsl:value-of select="fn:normalize-space($var_placeGroupKeyValue)"/>
 															</gco:CharacterString>
 														</gmd:title>
 														<gmd:date>
-															<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string('unknown')"/></xsl:attribute>
+															<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
 														</gmd:date>
 													</gmd:CI_Citation>
 												</gmd:thesaurusName>
@@ -2845,13 +2892,13 @@ Overview_Description: <xsl:for-each select="eaover">
 												<xsl:for-each select="placekey">
 													<gmd:keyword>
 														<gco:CharacterString>
-															<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+															<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 														</gco:CharacterString>
 													</gmd:keyword>
 												</xsl:for-each>
 												<gmd:type>
 													<gmd:MD_KeywordTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="place" codeSpace="002">
-														<xsl:sequence select="'place'"/>
+														<xsl:value-of select="'place'"/>
 													</gmd:MD_KeywordTypeCode>
 												</gmd:type>
 												<gmd:thesaurusName gco:nilReason="missing"/>
@@ -2864,20 +2911,20 @@ Overview_Description: <xsl:for-each select="eaover">
 							<!-- alternate logic for thesaurus name -->
 							<!--xsl:for-each-group select="keywords/stratum" group-by="xs:string(xs:string(stratkt))">
 								<xsl:variable name="var364_cur_result_groupby" as="item()+" select="current-group()"/>
-								<xsl:variable name="var365_cur_result_groupby" as="xs:string" select="current-grouping-key()"/ -->
+								<xsl:variable name="var365_cur_result_groupby"  select="current-grouping-key()"/ -->
 							<xsl:for-each select="keywords/stratum">
 								<gmd:descriptiveKeywords>
 									<gmd:MD_Keywords>
 										<xsl:for-each select="stratkey">
 											<gmd:keyword>
 												<gco:CharacterString>
-													<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+													<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 												</gco:CharacterString>
 											</gmd:keyword>
 										</xsl:for-each>
 										<gmd:type>
 											<gmd:MD_KeywordTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="stratum" codeSpace="003">
-												<xsl:sequence select="'stratum'"/>
+												<xsl:value-of select="'stratum'"/>
 											</gmd:MD_KeywordTypeCode>
 										</gmd:type>
 										<xsl:choose>
@@ -2886,11 +2933,11 @@ Overview_Description: <xsl:for-each select="eaover">
 													<gmd:CI_Citation>
 														<gmd:title>
 															<gco:CharacterString>
-																<xsl:sequence select="fn:normalize-space(xs:string(stratkt))"/>
+																<xsl:value-of select="fn:normalize-space(xs:string(stratkt))"/>
 															</gco:CharacterString>
 														</gmd:title>
 														<gmd:date>
-															<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string('unknown'))"/></xsl:attribute>
+															<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string('unknown'))"/></xsl:attribute>
 														</gmd:date>
 													</gmd:CI_Citation>
 												</gmd:thesaurusName>
@@ -2905,19 +2952,19 @@ Overview_Description: <xsl:for-each select="eaover">
 							<xsl:if test="fn:string-length(xs:string(keywords/temporal[1]/tempkey[1]))>0">
 								<xsl:for-each select="keywords/temporal">
 									<!--xsl:variable name="var370_cur_result_groupby" as="item()+" select="current-group()"/>
-								<xsl:variable name="var371_cur_result_groupby" as="xs:string" select="current-grouping-key()"/ -->
+								<xsl:variable name="var371_cur_result_groupby"  select="current-grouping-key()"/ -->
 									<gmd:descriptiveKeywords>
 										<gmd:MD_Keywords>
 											<xsl:for-each select="tempkey">
 												<gmd:keyword>
 													<gco:CharacterString>
-														<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+														<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 													</gco:CharacterString>
 												</gmd:keyword>
 											</xsl:for-each>
 											<gmd:type>
 												<gmd:MD_KeywordTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="temporal" codeSpace="004">
-													<xsl:sequence select="'temporal'"/>
+													<xsl:value-of select="'temporal'"/>
 												</gmd:MD_KeywordTypeCode>
 											</gmd:type>
 											<xsl:choose>
@@ -2926,11 +2973,11 @@ Overview_Description: <xsl:for-each select="eaover">
 														<gmd:CI_Citation>
 															<gmd:title>
 																<gco:CharacterString>
-																	<xsl:sequence select="fn:normalize-space(xs:string(tempkt))"/>
+																	<xsl:value-of select="fn:normalize-space(xs:string(tempkt))"/>
 																</gco:CharacterString>
 															</gmd:title>
 															<gmd:date>
-																<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string('unknown'))"/></xsl:attribute>
+																<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string('unknown'))"/></xsl:attribute>
 															</gmd:date>
 														</gmd:CI_Citation>
 													</gmd:thesaurusName>
@@ -2945,19 +2992,19 @@ Overview_Description: <xsl:for-each select="eaover">
 							</xsl:if>
 							<!-- resource constraints section, distribution liability, access constraint, and use constraints get concatenated into a single gmd:useConstraint 
 								text blob -->
-							<xsl:variable name="var_distributionLiability_exists" as="xs:string?">
+							<xsl:variable name="var_distributionLiability_exists" >
 								<xsl:if test="fn:exists($var_metadataRoot/distinfo/distliab)">
-									<xsl:sequence select="fn:concat('Distribution Liability: ', fn:string-join($var_metadataRoot/distinfo/distliab, ' '))"/>
+									<xsl:value-of select="fn:concat('Distribution Liability: ', fn:string-join($var_metadataRoot/distinfo/distliab, ' '))"/>
 								</xsl:if>
 							</xsl:variable>
-							<xsl:variable name="var_accessConstraints_exists" as="xs:string?">
+							<xsl:variable name="var_accessConstraints_exists" >
 								<xsl:if test="fn:exists(accconst)">
-									<xsl:sequence select="fn:concat('Access Constraints: ', fn:string-join($var_metadataRoot//idinfo/accconst, ' '))"/>
+									<xsl:value-of select="fn:concat('Access Constraints: ', fn:string-join($var_metadataRoot//idinfo/accconst, ' '))"/>
 								</xsl:if>
 							</xsl:variable>
-							<xsl:variable name="var_useLimitation_exists" as="xs:string?">
+							<xsl:variable name="var_useLimitation_exists" >
 								<xsl:if test="fn:exists(useconst)">
-									<xsl:sequence select="fn:concat('Use Limitation: ', fn:string-join($var_metadataRoot/idinfo/useconst, ' '))"/>
+									<xsl:value-of select="fn:concat('Use Limitation: ', fn:string-join($var_metadataRoot/idinfo/useconst, ' '))"/>
 								</xsl:if>
 							</xsl:variable>
 							<xsl:if test="fn:exists($var_distributionLiability_exists) or fn:exists($var_accessConstraints_exists) or fn:exists($var_useLimitation_exists)">
@@ -2966,14 +3013,14 @@ Overview_Description: <xsl:for-each select="eaover">
 										<xsl:if test="fn:exists($var_accessConstraints_exists)">
 											<gmd:accessConstraints>
 												<gmd:MD_RestrictionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode" codeListValue="otherRestrictions" codeSpace="008">
-													<xsl:sequence select="'otherRestrictions'"/>
+													<xsl:value-of select="'otherRestrictions'"/>
 												</gmd:MD_RestrictionCode>
 											</gmd:accessConstraints>
 										</xsl:if>
 										<xsl:if test="fn:exists($var_useLimitation_exists)">
 											<gmd:useConstraints>
 												<gmd:MD_RestrictionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode" codeListValue="otherRestrictions" codeSpace="008">
-													<xsl:sequence select="'otherRestrictions'"/>
+													<xsl:value-of select="'otherRestrictions'"/>
 												</gmd:MD_RestrictionCode>
 											</gmd:useConstraints>
 										</xsl:if>
@@ -2989,37 +3036,37 @@ Overview_Description: <xsl:for-each select="eaover">
 								<gmd:resourceConstraints>
 									<gmd:MD_SecurityConstraints>
 										<gmd:classification>
-											<xsl:variable name="var388_result_securityClassType" as="xs:string?">
+											<xsl:variable name="var388_result_securityClassType" >
 												<xsl:call-template name="vmf:securityClassType">
 													<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(secclass)))"/>
 												</xsl:call-template>
 											</xsl:variable>
-											<xsl:variable name="var385_cond_result_exists" as="xs:string?" select="(if (fn:exists($var388_result_securityClassType)) then $var388_result_securityClassType else ())"/>
-											<xsl:if test="fn:exists($var385_cond_result_exists)">
+<!--											<xsl:variable name="var385_cond_result_exists"  select="(if (fn:exists($var388_result_securityClassType)) then $var388_result_securityClassType else ())"/>-->
+											<xsl:if test="fn:exists($var388_result_securityClassType)">
 												<gmd:MD_ClassificationCode>
-													<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ClassificationCode'))"/></xsl:attribute>
-													<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI($var385_cond_result_exists))"/></xsl:attribute>
-													<xsl:variable name="var387_result_securityClassCode" as="xs:string?">
+													<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ClassificationCode'))"/></xsl:attribute>
+													<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI($var385_cond_result_exists))"/></xsl:attribute>
+													<xsl:variable name="var387_result_securityClassCode" >
 														<xsl:call-template name="vmf:securityClassCode">
 															<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(xs:string(secclass))))"/>
 														</xsl:call-template>
 													</xsl:variable>
-													<xsl:variable name="var386_cond_result_exists" as="xs:string?" select="(if (fn:exists($var387_result_securityClassCode)) then $var387_result_securityClassCode else ())"/>
-													<xsl:if test="fn:exists($var386_cond_result_exists)">
-														<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI($var386_cond_result_exists))"/></xsl:attribute>
+<!--													<xsl:variable name="var386_cond_result_exists"  select="(if (fn:exists($var387_result_securityClassCode)) then $var387_result_securityClassCode else ())"/>-->
+													<xsl:if test="fn:exists($var387_result_securityClassCode)">
+														<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI($var386_cond_result_exists))"/></xsl:attribute>
 													</xsl:if>
-													<xsl:sequence select="$var385_cond_result_exists"/>
+													<xsl:value-of select="$var385_cond_result_exists"/>
 												</gmd:MD_ClassificationCode>
 											</xsl:if>
 										</gmd:classification>
 										<gmd:classificationSystem>
 											<gco:CharacterString>
-												<xsl:sequence select="xs:string(secsys)"/>
+												<xsl:value-of select="xs:string(secsys)"/>
 											</gco:CharacterString>
 										</gmd:classificationSystem>
 										<gmd:handlingDescription>
 											<gco:CharacterString>
-												<xsl:sequence select="xs:string(sechandl)"/>
+												<xsl:value-of select="xs:string(sechandl)"/>
 											</gco:CharacterString>
 										</gmd:handlingDescription>
 									</gmd:MD_SecurityConstraints>
@@ -3028,7 +3075,7 @@ Overview_Description: <xsl:for-each select="eaover">
 							<!--  put in relationships to larger work and cross references using gmd:aggregationInfo elements -->
 							<xsl:if test="fn:exists(citation/citeinfo/lworkcit)">
 								<xsl:for-each select="citation/citeinfo/lworkcit">
-									<xsl:variable name="var_largerWorkCitationNode" as="node()" select="."/>
+									<xsl:variable name="var_largerWorkCitationNode" select="."/>
 									<gmd:aggregationInfo>
 										<gmd:MD_AggregateInformation>
 											<gmd:aggregateDataSetName>
@@ -3036,7 +3083,7 @@ Overview_Description: <xsl:for-each select="eaover">
 													<gmd:title>
 														<xsl:for-each select="citeinfo/title">
 															<gco:CharacterString>
-																<xsl:sequence select="xs:string(.)"/>
+																<xsl:value-of select="xs:string(.)"/>
 															</gco:CharacterString>
 														</xsl:for-each>
 													</gmd:title>
@@ -3049,41 +3096,34 @@ Overview_Description: <xsl:for-each select="eaover">
 																</xsl:call-template>
 															</gmd:date>
 															<gmd:dateType>
-																<xsl:variable name="var647_cond_result_exists" as="xs:string?" select="(if (fn:exists(citeinfo/pubdate)) then 'publication' else ())"/>
-																<xsl:if test="fn:exists($var647_cond_result_exists)">
+																<xsl:if test="fn:exists(citeinfo/pubdate)">
 																	<gmd:CI_DateTypeCode>
-																		<xsl:variable name="var648_cond_result_exists" as="xs:string?" select="(if (fn:exists(citeinfo/pubdate)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode' else ())"/>
-																		<xsl:if test="fn:exists($var648_cond_result_exists)">
-																			<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI($var648_cond_result_exists))"/></xsl:attribute>
-																		</xsl:if>
-																		<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI($var647_cond_result_exists))"/></xsl:attribute>
-																		<xsl:variable name="var649_cond_result_exists" as="xs:string?" select="(if (fn:exists(citeinfo/pubdate)) then '002' else ())"/>
-																		<xsl:if test="fn:exists($var649_cond_result_exists)">
-																			<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI($var649_cond_result_exists))"/></xsl:attribute>
-																		</xsl:if>
-																		<xsl:sequence select="$var647_cond_result_exists"/>
+																		<xsl:attribute name="codeList"><xsl:value-of select="xs:string('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode')"/></xsl:attribute>
+																		<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string()"/></xsl:attribute>
+																		<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string('002')"/></xsl:attribute>
+																		<!--<xsl:value-of select="string(citeinfo/pubdate)"/>-->
 																	</gmd:CI_DateTypeCode>
 																</xsl:if>
 															</gmd:dateType>
 														</gmd:CI_Date>
 													</gmd:date>
-													<gmd:edition>
-														<xsl:for-each select="citeinfo/edition">
+													<xsl:for-each select="citeinfo/edition">
+														<gmd:edition>
 															<gco:CharacterString>
-																<xsl:sequence select="xs:string(.)"/>
+																<xsl:value-of select="xs:string(.)"/>
 															</gco:CharacterString>
-														</xsl:for-each>
 													</gmd:edition>
+													</xsl:for-each>
 													<gmd:citedResponsibleParty>
 														<gmd:CI_ResponsibleParty>
 															<gmd:organisationName>
 																<!-- xsl:for-each select="citeinfo/origin" -->
 																<gco:CharacterString>
-																	<xsl:variable name="orgCount" as="xs:integer">
+																	<xsl:variable name="orgCount" >
 																		<xsl:value-of select="xs:integer(fn:count(citeinfo/origin))"/>
 																	</xsl:variable>
 																	<xsl:for-each select="citeinfo/origin">
-																		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																		<xsl:if test="($orgCount>1)">
 																			<xsl:value-of select="xs:string(' ')"/>
 																		</xsl:if>
@@ -3093,78 +3133,85 @@ Overview_Description: <xsl:for-each select="eaover">
 															</gmd:organisationName>
 															<gmd:role>
 																<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="originator" codeSpace="006">
-																	<xsl:sequence select="'originator'"/>
+																	<xsl:value-of select="'originator'"/>
 																</gmd:CI_RoleCode>
 															</gmd:role>
 														</gmd:CI_ResponsibleParty>
 													</gmd:citedResponsibleParty>
 													<gmd:presentationForm>
-														<xsl:variable name="var672_map_select_citeinfo" as="xs:string*">
+														<xsl:variable name="var672_map_select_citeinfo" >
 															<xsl:for-each select="citeinfo/geoform">
-																<xsl:sequence select="xs:string(.)"/>
+																<xsl:value-of select="xs:string(.)"/>
 															</xsl:for-each>
 														</xsl:variable>
-														<xsl:variable name="var654_cond_result_exists" as="xs:string?">
+														<xsl:variable name="var654_cond_result_exists" >
 															<xsl:choose>
 																<xsl:when test="fn:exists($var672_map_select_citeinfo)">
-																	<xsl:variable name="var674_map_select_citeinfo" as="xs:string*">
+																	<xsl:variable name="var674_map_select_citeinfo" >
 																		<xsl:for-each select="citeinfo/geoform">
-																			<xsl:variable name="var677_result_statusType" as="xs:string?">
+																			<xsl:variable name="var677_result_statusType" >
 																				<xsl:call-template name="vmf:statusType">
 																					<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(.)))"/>
 																				</xsl:call-template>
 																			</xsl:variable>
 																			<xsl:if test="fn:exists($var677_result_statusType)">
-																				<xsl:sequence select="$var677_result_statusType"/>
+																				<xsl:value-of select="$var677_result_statusType"/>
 																			</xsl:if>
 																		</xsl:for-each>
 																	</xsl:variable>
 																	<xsl:if test="fn:exists($var674_map_select_citeinfo)">
-																		<xsl:sequence select="xs:string(fn:string-join($var674_map_select_citeinfo, ' '))"/>
+																		<xsl:value-of select="xs:string(fn:string-join($var674_map_select_citeinfo, ' '))"/>
 																	</xsl:if>
 																</xsl:when>
 																<xsl:otherwise>
-																	<xsl:sequence select="''"/>
+																	<xsl:value-of select="''"/>
 																</xsl:otherwise>
 															</xsl:choose>
 														</xsl:variable>
 														<xsl:for-each select="$var654_cond_result_exists">
 															<gmd:CI_PresentationFormCode>
-																<xsl:attribute name="codeList"><xsl:variable name="var658_map_select_citeinfo" as="xs:string*"><xsl:for-each select="$var_largerWorkCitationNode/citeinfo/geoform"><xsl:sequence select="xs:string(.)"/></xsl:for-each></xsl:variable><xsl:variable name="var657_cond_result_exists" as="xs:string" select="(if (fn:exists($var658_map_select_citeinfo)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ProgressCode' else '')"/><xsl:sequence select="xs:string(xs:anyURI($var657_cond_result_exists))"/></xsl:attribute>
-																<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI(.))"/></xsl:attribute>
-																<xsl:variable name="var664_map_select_citeinfo" as="xs:string*">
+																<xsl:attribute name="codeList">
+																	<xsl:variable name="var658_map_select_citeinfo" >
+																		<xsl:for-each select="$var_largerWorkCitationNode/citeinfo/geoform"><xsl:value-of select="xs:string(.)"/>
+																		</xsl:for-each>
+																	</xsl:variable>
+<!--																	<xsl:variable name="var657_cond_result_exists"  select="(if (fn:exists($var658_map_select_citeinfo)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ProgressCode' else '')"/>-->
+																	<xsl:value-of select="xs:string('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ProgressCode')"/>
+																</xsl:attribute>
+																<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
+																<xsl:variable name="var664_map_select_citeinfo" >
 																	<xsl:for-each select="$var_largerWorkCitationNode/citeinfo/geoform">
-																		<xsl:sequence select="xs:string(.)"/>
+																		<xsl:value-of select="xs:string(.)"/>
 																	</xsl:for-each>
 																</xsl:variable>
-																<xsl:variable name="var661_cond_result_exists" as="xs:string?">
+																<xsl:variable name="var661_cond_result_exists" >
 																	<xsl:choose>
 																		<xsl:when test="fn:exists($var664_map_select_citeinfo)">
-																			<xsl:variable name="var666_map_select_citeinfo" as="xs:string*">
+																			<xsl:variable name="var666_map_select_citeinfo" >
 																				<xsl:for-each select="$var_largerWorkCitationNode/citeinfo/geoform">
-																					<xsl:variable name="var669_result_statusCode" as="xs:string?">
+																					<xsl:variable name="var669_result_statusCode" >
 																						<xsl:call-template name="vmf:statusCode">
 																							<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(.)))"/>
 																						</xsl:call-template>
 																					</xsl:variable>
 																					<xsl:if test="fn:exists($var669_result_statusCode)">
-																						<xsl:sequence select="$var669_result_statusCode"/>
+																						<xsl:value-of select="$var669_result_statusCode"/>
 																					</xsl:if>
 																				</xsl:for-each>
 																			</xsl:variable>
 																			<xsl:if test="fn:exists($var666_map_select_citeinfo)">
-																				<xsl:sequence select="xs:string(fn:string-join($var666_map_select_citeinfo, ' '))"/>
+																				<xsl:value-of select="xs:string(fn:string-join($var666_map_select_citeinfo, ' '))"/>
 																			</xsl:if>
 																		</xsl:when>
 																		<xsl:otherwise>
-																			<xsl:sequence select="''"/>
+																			<xsl:value-of select="''"/>
 																		</xsl:otherwise>
 																	</xsl:choose>
 																</xsl:variable>
 																<xsl:for-each select="$var661_cond_result_exists">
-																	<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI(.))"/></xsl:attribute>
+																	<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
 																</xsl:for-each>
-																<xsl:sequence select="."/>
+																<xsl:value-of select="."/>
 															</gmd:CI_PresentationFormCode>
 														</xsl:for-each>
 													</gmd:presentationForm>
@@ -3174,14 +3221,14 @@ Overview_Description: <xsl:for-each select="eaover">
 																<gmd:name>
 																	<xsl:for-each select="sername">
 																		<gco:CharacterString>
-																			<xsl:sequence select="xs:string(.)"/>
+																			<xsl:value-of select="xs:string(.)"/>
 																		</gco:CharacterString>
 																	</xsl:for-each>
 																</gmd:name>
 																<gmd:issueIdentification>
 																	<xsl:for-each select="issue">
 																		<gco:CharacterString>
-																			<xsl:sequence select="xs:string(.)"/>
+																			<xsl:value-of select="xs:string(.)"/>
 																		</gco:CharacterString>
 																	</xsl:for-each>
 																</gmd:issueIdentification>
@@ -3191,31 +3238,31 @@ Overview_Description: <xsl:for-each select="eaover">
 													<gmd:otherCitationDetails>
 														<xsl:for-each select="citeinfo/othercit">
 															<gco:CharacterString>
-																<xsl:sequence select="xs:string(.)"/>
+																<xsl:value-of select="xs:string(.)"/>
 															</gco:CharacterString>
 														</xsl:for-each>
 													</gmd:otherCitationDetails>
 												</gmd:CI_Citation>
 											</gmd:aggregateDataSetName>
 											<gmd:associationType>
-												<!-- xsl:variable name="var688_cond_result_exists" as="xs:string?" select="(if (fn:exists(citeinfo/origin)) then 'largerWorkCitation' else ())"/>
+												<!-- xsl:variable name="var688_cond_result_exists"  select="(if (fn:exists(citeinfo/origin)) then 'largerWorkCitation' else ())"/>
 												<xsl:if test="fn:exists($var688_cond_result_exists)" -->
 												<gmd:DS_AssociationTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DS_AssociationTypeCode" codeListValue="largerWorkCitation" codeSpace="002">
-													<!--xsl:variable name="var689_cond_result_exists" as="xs:string?">
+													<!--xsl:variable name="var689_cond_result_exists" >
 															<xsl:if test="fn:exists(citeinfo/origin)">
-																<xsl:variable name="var691_cond_result_exists" as="xs:string?" select="(if (fn:exists(citeinfo/origin)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DS_AssociationTypeCode' else ())"/>
+																<xsl:variable name="var691_cond_result_exists"  select="(if (fn:exists(citeinfo/origin)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DS_AssociationTypeCode' else ())"/>
 																<xsl:if test="fn:exists($var691_cond_result_exists)">
-																	<xsl:sequence select="$var691_cond_result_exists"/>
+																	<xsl:value-of select="$var691_cond_result_exists"/>
 																</xsl:if>
 															</xsl:if>
 														</xsl:variable>
 														<xsl:if test="fn:exists($var689_cond_result_exists)">
-															<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI($var689_cond_result_exists))"/></xsl:attribute>
+															<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI($var689_cond_result_exists))"/></xsl:attribute>
 														</xsl:if>
-														<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI($var688_cond_result_exists))"/></xsl:attribute>
-														<xsl:variable name="var692_cond_result_exists" as="xs:string?" select="(if (fn:exists(citeinfo/origin)) then '002' else ())"/>
+														<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI($var688_cond_result_exists))"/></xsl:attribute>
+														<xsl:variable name="var692_cond_result_exists"  select="(if (fn:exists(citeinfo/origin)) then '002' else ())"/>
 														<xsl:if test="fn:exists($var692_cond_result_exists)">
-															<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI($var692_cond_result_exists))"/></xsl:attribute>
+															<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI($var692_cond_result_exists))"/></xsl:attribute>
 														</xsl:if -->
 													<xsl:value-of select="largerWorkCitation"/>
 												</gmd:DS_AssociationTypeCode>
@@ -3229,13 +3276,13 @@ Overview_Description: <xsl:for-each select="eaover">
 								<xsl:for-each select="crossref">
 									<gmd:aggregationInfo>
 										<gmd:MD_AggregateInformation>
-											<xsl:variable name="var693_crossref" as="node()" select="."/>
+											<xsl:variable name="var693_crossref" select="."/>
 											<gmd:aggregateDataSetName>
 												<gmd:CI_Citation>
 													<gmd:title>
 														<xsl:for-each select="citeinfo/title">
 															<gco:CharacterString>
-																<xsl:sequence select="xs:string(.)"/>
+																<xsl:value-of select="xs:string(.)"/>
 															</gco:CharacterString>
 														</xsl:for-each>
 													</gmd:title>
@@ -3248,19 +3295,30 @@ Overview_Description: <xsl:for-each select="eaover">
 																</xsl:call-template>
 															</gmd:date>
 															<gmd:dateType>
-																<xsl:variable name="var733_cond_result_exists" as="xs:string?" select="(if (fn:exists(citeinfo/pubdate)) then 'publication' else ())"/>
+												<xsl:variable name="var733_cond_result_exists">
+												<xsl:choose>
+												<xsl:when test="(fn:exists(citeinfo/pubdate))">
+												<xsl:value-of select="string('publication')"/>
+												</xsl:when>
+												<xsl:otherwise>
+												<xsl:value-of select="''"/>
+												</xsl:otherwise>
+												</xsl:choose>
+												</xsl:variable>
 																<xsl:if test="fn:exists($var733_cond_result_exists)">
 																	<gmd:CI_DateTypeCode>
-																		<xsl:variable name="var734_cond_result_exists" as="xs:string?" select="(if (fn:exists(citeinfo/pubdate)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode' else ())"/>
-																		<xsl:if test="fn:exists($var734_cond_result_exists)">
-																			<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI($var734_cond_result_exists))"/></xsl:attribute>
-																		</xsl:if>
-																		<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI($var733_cond_result_exists))"/></xsl:attribute>
-																		<xsl:variable name="var735_cond_result_exists" as="xs:string?" select="(if (fn:exists(citeinfo/pubdate)) then '002' else ())"/>
-																		<xsl:if test="fn:exists($var735_cond_result_exists)">
-																			<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI($var735_cond_result_exists))"/></xsl:attribute>
-																		</xsl:if>
-																		<xsl:sequence select="$var733_cond_result_exists"/>
+														<!--				<xsl:variable name="var734_cond_result_exists"  select="(if (fn:exists(citeinfo/pubdate)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode' else ())"/>
+																		<xsl:if test="fn:exists($var734_cond_result_exists)">-->
+																			<xsl:attribute name="codeList">
+																				<xsl:value-of select="xs:string('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode')"/>
+																			</xsl:attribute>
+																	<!--	</xsl:if>-->
+																		<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI($var733_cond_result_exists))"/></xsl:attribute>
+																	<!--	<xsl:variable name="var735_cond_result_exists"  select="(if (fn:exists(citeinfo/pubdate)) then '002' else ())"/>-->
+																		<!--<xsl:if test="fn:exists($var735_cond_result_exists)">-->
+																			<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string('002')"/></xsl:attribute>
+																	<!--	</xsl:if>-->
+																		<!--<xsl:value-of select="$var733_cond_result_exists"/>-->
 																	</gmd:CI_DateTypeCode>
 																</xsl:if>
 															</gmd:dateType>
@@ -3269,7 +3327,7 @@ Overview_Description: <xsl:for-each select="eaover">
 													<gmd:edition>
 														<xsl:for-each select="citeinfo/edition">
 															<gco:CharacterString>
-																<xsl:sequence select="xs:string(.)"/>
+																<xsl:value-of select="xs:string(.)"/>
 															</gco:CharacterString>
 														</xsl:for-each>
 													</gmd:edition>
@@ -3278,11 +3336,11 @@ Overview_Description: <xsl:for-each select="eaover">
 															<gmd:organisationName>
 																<!--	<xsl:for-each select="citeinfo/origin"> -->
 																<gco:CharacterString>
-																	<xsl:variable name="orgCount" as="xs:integer">
+																	<xsl:variable name="orgCount" >
 																		<xsl:value-of select="xs:integer(fn:count(citeinfo/origin))"/>
 																	</xsl:variable>
 																	<xsl:for-each select="citeinfo/origin">
-																		<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																		<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																		<xsl:if test="($orgCount>1)">
 																			<xsl:value-of select="xs:string(' ')"/>
 																		</xsl:if>
@@ -3292,73 +3350,73 @@ Overview_Description: <xsl:for-each select="eaover">
 															</gmd:organisationName>
 															<gmd:role>
 																<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="originator" codeSpace="006">
-																	<xsl:sequence select="'originator'"/>
+																	<xsl:value-of select="'originator'"/>
 																</gmd:CI_RoleCode>
 															</gmd:role>
 														</gmd:CI_ResponsibleParty>
 													</gmd:citedResponsibleParty>
 													<gmd:presentationForm>
-														<xsl:variable name="var740_cond_result_exists" as="xs:string?">
+														<xsl:variable name="var740_cond_result_exists" >
 															<xsl:choose>
 																<xsl:when test="fn:exists(citeinfo/geoform)">
-																	<xsl:variable name="var754_map_select_citeinfo" as="xs:string*">
+																	<xsl:variable name="var754_map_select_citeinfo" >
 																		<xsl:for-each select="citeinfo/geoform">
-																			<xsl:variable name="var757_result_docType" as="xs:string?">
+																			<xsl:variable name="var757_result_docType" >
 																				<xsl:call-template name="vmf:docType">
 																					<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(xs:string(.))))"/>
 																				</xsl:call-template>
 																			</xsl:variable>
 																			<xsl:if test="fn:exists($var757_result_docType)">
-																				<xsl:sequence select="$var757_result_docType"/>
+																				<xsl:value-of select="$var757_result_docType"/>
 																			</xsl:if>
 																		</xsl:for-each>
 																	</xsl:variable>
 																	<xsl:if test="fn:exists($var754_map_select_citeinfo)">
-																		<xsl:sequence select="xs:string(fn:string-join($var754_map_select_citeinfo, ' '))"/>
+																		<xsl:value-of select="xs:string(fn:string-join($var754_map_select_citeinfo, ' '))"/>
 																	</xsl:if>
 																</xsl:when>
 																<xsl:otherwise>
-																	<xsl:variable name="var758_map_select_citeinfo" as="xs:string*">
+																	<xsl:variable name="var758_map_select_citeinfo" >
 																		<xsl:for-each select="citeinfo/geoform">
-																			<xsl:sequence select="fn:normalize-space(xs:string(xs:string(.)))"/>
+																			<xsl:value-of select="fn:normalize-space(xs:string(xs:string(.)))"/>
 																		</xsl:for-each>
 																	</xsl:variable>
 																	<xsl:if test="fn:exists($var758_map_select_citeinfo)">
-																		<xsl:sequence select="xs:string(fn:string-join($var758_map_select_citeinfo, ' '))"/>
+																		<xsl:value-of select="xs:string(fn:string-join($var758_map_select_citeinfo, ' '))"/>
 																	</xsl:if>
 																</xsl:otherwise>
 															</xsl:choose>
 														</xsl:variable>
 														<xsl:for-each select="$var740_cond_result_exists">
 															<gmd:CI_PresentationFormCode>
-																<xsl:variable name="var743_cond_result_exists" as="xs:string?" select="(if (fn:exists($var693_crossref/citeinfo/geoform)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode' else ())"/>
+																<xsl:variable name="var743_cond_result_exists"  select="(if (fn:exists($var693_crossref/citeinfo/geoform)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode' else ())"/>
 																<xsl:if test="fn:exists($var743_cond_result_exists)">
-																	<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI($var743_cond_result_exists))"/></xsl:attribute>
+																	<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI($var743_cond_result_exists))"/></xsl:attribute>
 																</xsl:if>
-																<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI(.))"/></xsl:attribute>
-																<xsl:variable name="var744_cond_result_exists" as="xs:string?">
+																<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
+																<xsl:variable name="var744_cond_result_exists" >
 																	<xsl:if test="fn:exists($var693_crossref/citeinfo/geoform)">
-																		<xsl:variable name="var748_map_select_citeinfo" as="xs:string*">
+																		<xsl:variable name="var748_map_select_citeinfo" >
 																			<xsl:for-each select="$var693_crossref/citeinfo/geoform">
-																				<xsl:variable name="var751_result_docCode" as="xs:string?">
+																				<xsl:variable name="var751_result_docCode" >
 																					<xsl:call-template name="vmf:docCode">
 																						<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(xs:string(.))))"/>
 																					</xsl:call-template>
 																				</xsl:variable>
 																				<xsl:if test="fn:exists($var751_result_docCode)">
-																					<xsl:sequence select="$var751_result_docCode"/>
+																					<xsl:value-of select="$var751_result_docCode"/>
 																				</xsl:if>
 																			</xsl:for-each>
 																		</xsl:variable>
 																		<xsl:if test="fn:exists($var748_map_select_citeinfo)">
-																			<xsl:sequence select="xs:string(fn:string-join($var748_map_select_citeinfo, ' '))"/>
+																			<xsl:value-of select="xs:string(fn:string-join($var748_map_select_citeinfo, ' '))"/>
 																		</xsl:if>
 																	</xsl:if>
 																</xsl:variable>
 																<xsl:for-each select="$var744_cond_result_exists">
-																	<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI(.))"/></xsl:attribute>
+																	<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
 																</xsl:for-each>
-																<xsl:sequence select="."/>
+																<xsl:value-of select="."/>
 															</gmd:CI_PresentationFormCode>
 														</xsl:for-each>
 													</gmd:presentationForm>
@@ -3367,14 +3425,14 @@ Overview_Description: <xsl:for-each select="eaover">
 															<gmd:name>
 																<xsl:for-each select="citeinfo/serinfo/sername">
 																	<gco:CharacterString>
-																		<xsl:sequence select="xs:string(.)"/>
+																		<xsl:value-of select="xs:string(.)"/>
 																	</gco:CharacterString>
 																</xsl:for-each>
 															</gmd:name>
 															<gmd:issueIdentification>
 																<xsl:for-each select="citeinfo/serinfo/issue">
 																	<gco:CharacterString>
-																		<xsl:sequence select="xs:string(.)"/>
+																		<xsl:value-of select="xs:string(.)"/>
 																	</gco:CharacterString>
 																</xsl:for-each>
 															</gmd:issueIdentification>
@@ -3383,7 +3441,7 @@ Overview_Description: <xsl:for-each select="eaover">
 													<gmd:otherCitationDetails>
 														<xsl:for-each select="citeinfo/othercit">
 															<gco:CharacterString>
-																<xsl:sequence select="xs:string(.)"/>
+																<xsl:value-of select="xs:string(.)"/>
 															</gco:CharacterString>
 														</xsl:for-each>
 													</gmd:otherCitationDetails>
@@ -3391,26 +3449,26 @@ Overview_Description: <xsl:for-each select="eaover">
 											</gmd:aggregateDataSetName>
 											<!-- /xsl:for-each -->
 											<gmd:associationType>
-												<xsl:variable name="var767_cond_result_exists" as="xs:string?" select="(if (fn:exists($var_idinfoSourceNode/crossref/citeinfo/origin)) then 'crossReference' else ())"/>
-												<xsl:if test="fn:exists($var767_cond_result_exists)">
+<!--												<xsl:variable name="var767_cond_result_exists"  select="(if (fn:exists($var_idinfoSourceNode/crossref/citeinfo/origin)) then 'crossReference' else ())"/>-->
+												<xsl:if test="fn:exists($var_idinfoSourceNode/crossref/citeinfo/origin)">
 													<gmd:DS_AssociationTypeCode>
-														<xsl:variable name="var768_cond_result_exists" as="xs:string?">
+<!--														<xsl:variable name="var768_cond_result_exists" >
 															<xsl:if test="fn:exists($var_idinfoSourceNode/crossref/citeinfo/origin)">
-																<xsl:variable name="var770_cond_result_exists" as="xs:string?" select="(if (fn:exists(citeinfo/origin)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DS_AssociationTypeCode' else ())"/>
+																<xsl:variable name="var770_cond_result_exists"  select="(if (fn:exists(citeinfo/origin)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DS_AssociationTypeCode' else ())"/>
 																<xsl:if test="fn:exists($var770_cond_result_exists)">
-																	<xsl:sequence select="$var770_cond_result_exists"/>
+																	<xsl:value-of select="$var770_cond_result_exists"/>
 																</xsl:if>
 															</xsl:if>
 														</xsl:variable>
-														<xsl:if test="fn:exists($var768_cond_result_exists)">
-															<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI($var768_cond_result_exists))"/></xsl:attribute>
-														</xsl:if>
-														<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI($var767_cond_result_exists))"/></xsl:attribute>
-														<xsl:variable name="var771_cond_result_exists" as="xs:string?" select="(if (fn:exists($var_idinfoSourceNode/crossref/citeinfo/origin)) then '001' else ())"/>
-														<xsl:if test="fn:exists($var771_cond_result_exists)">
-															<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI($var771_cond_result_exists))"/></xsl:attribute>
-														</xsl:if>
-														<xsl:sequence select="$var767_cond_result_exists"/>
+														<xsl:if test="fn:exists($var768_cond_result_exists)">-->
+															<xsl:attribute name="codeList"><xsl:value-of select="xs:string('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DS_AssociationTypeCode')"/></xsl:attribute>
+														<!--</xsl:if>-->
+														<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string($var_idinfoSourceNode/crossref/citeinfo/origin)"/></xsl:attribute>
+													<!--	<xsl:variable name="var771_cond_result_exists"  select="(if (fn:exists($var_idinfoSourceNode/crossref/citeinfo/origin)) then '001' else ())"/>
+														<xsl:if test="fn:exists($var771_cond_result_exists)">-->
+															<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string('001')"/></xsl:attribute>
+														<!--</xsl:if>-->
+														<xsl:value-of select="$var767_cond_result_exists"/>
 													</gmd:DS_AssociationTypeCode>
 												</xsl:if>
 											</gmd:associationType>
@@ -3423,24 +3481,24 @@ Overview_Description: <xsl:for-each select="eaover">
 							<xsl:for-each select="$var_metadataRoot/spdoinfo">
 								<gmd:spatialRepresentationType>
 									<xsl:for-each select="direct">
-										<xsl:variable name="var563_result_spatialRepresentationType" as="xs:string?">
+										<xsl:variable name="var563_result_spatialRepresentationType" >
 											<xsl:call-template name="vmf:spatialRepresentationType">
 												<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(fn:string(.)))"/>
 											</xsl:call-template>
 										</xsl:variable>
 										<xsl:if test="fn:exists($var563_result_spatialRepresentationType)">
 											<gmd:MD_SpatialRepresentationTypeCode>
-												<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_SpatialRepresentationTypeCode'))"/></xsl:attribute>
-												<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI($var563_result_spatialRepresentationType))"/></xsl:attribute>
-												<xsl:variable name="var564_result_spatialRepresentationCode" as="xs:string?">
+												<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_SpatialRepresentationTypeCode'))"/></xsl:attribute>
+												<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI($var563_result_spatialRepresentationType))"/></xsl:attribute>
+												<xsl:variable name="var564_result_spatialRepresentationCode" >
 													<xsl:call-template name="vmf:spatialRepresentationCode">
 														<xsl:with-param name="input" select="$var563_result_spatialRepresentationType"/>
 													</xsl:call-template>
 												</xsl:variable>
 												<xsl:if test="fn:exists($var564_result_spatialRepresentationCode)">
-													<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI($var564_result_spatialRepresentationCode))"/></xsl:attribute>
+													<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI($var564_result_spatialRepresentationCode))"/></xsl:attribute>
 												</xsl:if>
-												<xsl:sequence select="$var563_result_spatialRepresentationType"/>
+												<xsl:value-of select="$var563_result_spatialRepresentationType"/>
 											</gmd:MD_SpatialRepresentationTypeCode>
 										</xsl:if>
 									</xsl:for-each>
@@ -3449,7 +3507,7 @@ Overview_Description: <xsl:for-each select="eaover">
 							<!-- resource language -->
 							<gmd:language>
 								<gco:CharacterString>
-									<xsl:sequence select="'eng'"/>
+									<xsl:value-of select="'eng'"/>
 								</gco:CharacterString>
 							</gmd:language>
 							<!-- messy logic to extract ISO topic category  -->
@@ -3489,29 +3547,33 @@ utilitiesCommunication', concat(' ',string(.)))">
 							</xsl:choose>
 							<!-- end topic category section -->
 							<xsl:for-each select="native">
-								<xsl:variable name="var_nativeEnvironmentNode" as="node()" select="."/>
+								<xsl:variable name="var_nativeEnvironmentNode" select="."/>
 								<gmd:environmentDescription>
-									<xsl:variable name="var574_cond_result_exists" as="xs:string?">
+									<xsl:variable name="var574_cond_result_exists" >
 										<xsl:choose>
 											<xsl:when test="fn:exists($var_metadataRoot/distinfo/techpreq)">
-												<xsl:variable name="var579_map_select_distinfo" as="xs:string*">
+												<xsl:variable name="var579_map_select_distinfo" >
 													<xsl:for-each select="$var_metadataRoot/distinfo/techpreq">
-														<xsl:sequence select="xs:string(.)"/>
+														<xsl:value-of select="xs:string(.)"/>
 													</xsl:for-each>
 												</xsl:variable>
 												<xsl:if test="fn:exists($var579_map_select_distinfo)">
-													<xsl:sequence select="fn:string-join($var579_map_select_distinfo, ' ')"/>
+													<xsl:value-of select="fn:string-join($var579_map_select_distinfo, ' ')"/>
 												</xsl:if>
 											</xsl:when>
 											<xsl:otherwise>
-												<xsl:sequence select="' '"/>
+												<xsl:value-of select="' '"/>
 											</xsl:otherwise>
 										</xsl:choose>
 									</xsl:variable>
 									<xsl:for-each select="$var574_cond_result_exists">
 										<gco:CharacterString>
-											<xsl:variable name="var577_cond_result_exists" as="xs:string" select="(if (fn:exists($var_metadataRoot/distinfo/techpreq)) then ' Technical Prerequisites: ' else ' ')"/>
-											<xsl:sequence select="fn:normalize-space(fn:string(fn:concat('Native Dataset Environment: ', xs:string($var_nativeEnvironmentNode), $var577_cond_result_exists, .)))"/>
+											<xsl:variable name="var577_cond_result_exists">
+												<xsl:if test="(fn:exists($var_metadataRoot/distinfo/techpreq))"> 
+													<xsl:value-of select="string(' Technical Prerequisites: ')"/>
+												</xsl:if>
+											</xsl:variable>  
+											<xsl:value-of select="fn:string(fn:concat('Native Dataset Environment: ', xs:string($var_nativeEnvironmentNode), $var577_cond_result_exists, .)))"/>
 										</gco:CharacterString>
 									</xsl:for-each>
 								</gmd:environmentDescription>
@@ -3519,16 +3581,16 @@ utilitiesCommunication', concat(' ',string(.)))">
 							<!-- Extent section, geographic, vertical, temporal... -->
 							<gmd:extent>
 								<gmd:EX_Extent>
-									<xsl:attribute name="id"><xsl:sequence select="generate-id()"/></xsl:attribute>
+									<xsl:attribute name="id"><xsl:value-of select="generate-id()"/></xsl:attribute>
 									<gmd:geographicElement>
 										<!-- bounding box is mandatory, spatial reference should be EPSG 4326, ie WGS 84 -->
 										<!-- geographic extent, lat long bounding box required for USGIN -->
 										<gmd:EX_GeographicBoundingBox>
-											<xsl:attribute name="id"><xsl:sequence select="fn:concat('gbb.', generate-id())"/></xsl:attribute>
+											<xsl:attribute name="id"><xsl:value-of select="fn:concat('gbb.', generate-id())"/></xsl:attribute>
 											<gmd:westBoundLongitude>
 												<gco:Decimal>
 													<xsl:choose>
-														<xsl:when test="spdom/bounding/westbc castable as xs:decimal">
+														<xsl:when test="number(spdom/bounding/westbc)=number(spdom/bounding/westbc)">
 															<xsl:value-of select="xs:string(xs:decimal(spdom/bounding/westbc))"/>
 														</xsl:when>
 														<xsl:otherwise>
@@ -3540,7 +3602,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 											<gmd:eastBoundLongitude>
 												<gco:Decimal>
 													<xsl:choose>
-														<xsl:when test="spdom/bounding/eastbc castable as xs:decimal">
+														<xsl:when test="number(spdom/bounding/eastbc) = number(spdom/bounding/eastbc)">
 															<xsl:value-of select="xs:string(xs:decimal(spdom/bounding/eastbc))"/>
 														</xsl:when>
 														<xsl:otherwise>
@@ -3552,7 +3614,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 											<gmd:southBoundLatitude>
 												<gco:Decimal>
 													<xsl:choose>
-														<xsl:when test="spdom/bounding/southbc castable as xs:decimal">
+														<xsl:when test="number(spdom/bounding/southbc)=number(spdom/bounding/southbc)">
 															<xsl:value-of select="xs:string(xs:decimal(spdom/bounding/southbc))"/>
 														</xsl:when>
 														<xsl:otherwise>
@@ -3564,7 +3626,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 											<gmd:northBoundLatitude>
 												<gco:Decimal>
 													<xsl:choose>
-														<xsl:when test="spdom/bounding/northbc castable as xs:decimal">
+														<xsl:when test="number(spdom/bounding/northbc)=number(spdom/bounding/northbc)">
 															<xsl:value-of select="xs:string(xs:decimal(spdom/bounding/northbc))"/>
 														</xsl:when>
 														<xsl:otherwise>
@@ -3578,35 +3640,35 @@ utilitiesCommunication', concat(' ',string(.)))">
 									<xsl:for-each select="spdom/dsgpoly">
 										<gmd:geographicElement>
 											<!-- handle extent encoded as a polygon -->
-											<xsl:variable name="var582_dsgpoly" as="node()" select="."/>
+											<xsl:variable name="var582_dsgpoly" select="."/>
 											<gmd:EX_BoundingPolygon>
 												<gmd:polygon>
 													<gml:Polygon>
-														<xsl:attribute name="gml:id"><xsl:sequence select="fn:concat('boundingPoly.',generate-id())"/></xsl:attribute>
+														<xsl:attribute name="gml:id"><xsl:value-of select="fn:concat('boundingPoly.',generate-id())"/></xsl:attribute>
 														<gml:interior>
 															<gml:LinearRing>
 																<gml:coordinates>
-																	<xsl:variable name="var587_map_select_grngpoin" as="xs:string*">
+																	<xsl:variable name="var587_map_select_grngpoin" >
 																		<xsl:for-each select="dsgpolyo/grngpoin">
-																			<xsl:sequence select="fn:concat(xs:string(gringlat), ', ', xs:string(gringlon), '; ')"/>
+																			<xsl:value-of select="fn:concat(xs:string(gringlat), ', ', xs:string(gringlon), '; ')"/>
 																		</xsl:for-each>
 																	</xsl:variable>
-																	<xsl:variable name="var584_cond_result_exists" as="xs:string*">
+																	<xsl:variable name="var584_cond_result_exists" >
 																		<xsl:choose>
 																			<xsl:when test="fn:exists($var587_map_select_grngpoin)">
 																				<xsl:for-each select="dsgpolyo/grngpoin">
-																					<xsl:sequence select="fn:concat(xs:string(gringlat), ', ', xs:string(gringlon), '; ')"/>
+																					<xsl:value-of select="fn:concat(xs:string(gringlat), ', ', xs:string(gringlon), '; ')"/>
 																				</xsl:for-each>
 																			</xsl:when>
 																			<xsl:otherwise>
 																				<xsl:for-each select="dsgpolyo/gring">
-																					<xsl:sequence select="xs:string(.)"/>
+																					<xsl:value-of select="xs:string(.)"/>
 																				</xsl:for-each>
 																			</xsl:otherwise>
 																		</xsl:choose>
 																	</xsl:variable>
 																	<xsl:for-each select="$var584_cond_result_exists">
-																		<xsl:attribute name="decimal"><xsl:sequence select="fn:normalize-space(.)"/></xsl:attribute>
+																		<xsl:attribute name="decimal"><xsl:value-of select="fn:normalize-space(.)"/></xsl:attribute>
 																	</xsl:for-each>
 																</gml:coordinates>
 															</gml:LinearRing>
@@ -3618,30 +3680,33 @@ utilitiesCommunication', concat(' ',string(.)))">
 									</xsl:for-each>
 									<!-- temporal extent, single date -->
 									<xsl:for-each select="timeperd/timeinfo/sngdate">
-										<xsl:variable name="var_extentSingleDate" as="node()" select="."/>
+										<xsl:variable name="var_extentSingleDate" select="."/>
 										<gmd:temporalElement>
 											<gmd:EX_TemporalExtent>
-												<xsl:attribute name="id"><xsl:sequence select="fn:concat('TempEx.', generate-id())"/></xsl:attribute>
+												<xsl:attribute name="id"><xsl:value-of select="fn:concat('TempEx.', generate-id())"/></xsl:attribute>
 												<gmd:extent>
 													<xsl:if test="(fn:contains(fn:lower-case(fn:normalize-space(fn:string(caldate))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(caldate))), 'unpublished'))">
-														<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(caldate)))))"/></xsl:attribute>
+														<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(caldate)))))"/></xsl:attribute>
 													</xsl:if>
 													<gml:TimeInstant>
-														<xsl:attribute name="gml:id"><xsl:sequence select="fn:concat('TInst.',generate-id())"/></xsl:attribute>
+														<xsl:attribute name="gml:id"><xsl:value-of select="fn:concat('TInst.',generate-id())"/></xsl:attribute>
 														<gml:description>
-															<xsl:sequence select="xs:string(xs:string($var_metadataRoot/idinfo/timeperd/current))"/>
+															<xsl:value-of select="xs:string(xs:string($var_metadataRoot/idinfo/timeperd/current))"/>
 														</gml:description>
 														<!-- now process the dates -->
-														<!--						<xsl:variable name="var_DateTemp" as="node()"> -->
-														<xsl:variable name="var_TimePos" as="xs:string">
+														<!--						<xsl:variable name="var_DateTemp"> -->
+														<xsl:variable name="var_TimePos" >
 															<xsl:call-template name="usgin:TimePositionFormat">
 																<xsl:with-param name="inputDate" select="(caldate)"/>
 																<xsl:with-param name="inputTime" select="(time)"/>
 															</xsl:call-template>
 														</xsl:variable>
 														<gml:timePosition>
+															<xsl:variable name="castableAsDateTime">
+																<xsl:value-of select="(substring($var_TimePos,5,1)='-') and (substring($var_TimePos,8,1)='-') and (substring($var_TimePos,11,1)='T') and (substring($var_TimePos,14,1)=':') and (substring($var_TimePos,17,1)=':')"/>
+															</xsl:variable>
 															<xsl:choose>
-																<xsl:when test="$var_TimePos castable as xs:dateTime">
+																<xsl:when test="$castableAsDateTime">
 																	<xsl:value-of select="$var_TimePos"/>
 																</xsl:when>
 																<xsl:otherwise>
@@ -3658,29 +3723,29 @@ utilitiesCommunication', concat(' ',string(.)))">
 									<!-- temmporal extent, multiple individual dates and times. 
 						 guess the idea is there might be multple mdattim/sngdate elements?-->
 									<xsl:for-each select="timeperd/timeinfo/mdattim/sngdate">
-										<xsl:variable name="var713_sngdate" as="node()" select="."/>
+										<xsl:variable name="var713_sngdate" select="."/>
 										<gmd:temporalElement>
 											<gmd:EX_TemporalExtent>
-												<xsl:attribute name="id"><xsl:sequence select="fn:concat('TimePeriodEx.', generate-id())"/></xsl:attribute>
+												<xsl:attribute name="id"><xsl:value-of select="fn:concat('TimePeriodEx.', generate-id())"/></xsl:attribute>
 												<gmd:extent>
 													<xsl:if test="(fn:contains(fn:lower-case(fn:normalize-space(fn:string(caldate))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(caldate))), 'unpublished'))">
-														<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(caldate)))))"/></xsl:attribute>
+														<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(caldate)))))"/></xsl:attribute>
 													</xsl:if>
 													<gml:TimeInstant>
-														<xsl:attribute name="gml:id"><xsl:sequence select="fn:concat('ATimeInstant.',generate-id())"/></xsl:attribute>
+														<xsl:attribute name="gml:id"><xsl:value-of select="fn:concat('ATimeInstant.',generate-id())"/></xsl:attribute>
 														<gml:description>
-															<xsl:sequence select="xs:string(xs:string($var_metadataRoot/idinfo/timeperd/current))"/>
+															<xsl:value-of select="xs:string(xs:string($var_metadataRoot/idinfo/timeperd/current))"/>
 														</gml:description>
 														<gml:timePosition>
-															<xsl:variable name="var718_cond_result_exists" as="xs:string?" select="(if (fn:exists((if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var713_sngdate/caldate))), 'present')) then 'now' else ()))) then (if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var713_sngdate/caldate))), 'present')) then 'now' else ()) else 'unknown')"/>
-															<xsl:if test="fn:exists($var718_cond_result_exists)">
-																<xsl:attribute name="indeterminatePosition"><xsl:sequence select="$var718_cond_result_exists"/></xsl:attribute>
+														<!--	<xsl:variable name="var718_cond_result_exists"  select="(if (fn:exists((if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var713_sngdate/caldate))), 'present')) then 'now' else ()))) then (if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var713_sngdate/caldate))), 'present')) then 'now' else ()) else 'unknown')"/>-->
+															<xsl:if test="fn:exists($var713_sngdate/caldate)">
+																<xsl:attribute name="indeterminatePosition"><xsl:value-of select="string('now')"/></xsl:attribute>
 															</xsl:if>
-															<xsl:sequence select="xs:string(xs:string(.))"/>
+															<xsl:value-of select="xs:string(xs:string(.))"/>
 														</gml:timePosition>
 														<!-- /xsl:for-each -->
 														<!-- can't use tempalate because that puts date in a gco:DateTime elelent, but needs to be gml:TimePosition here -->
-														<xsl:variable name="var_DateTemp" as="node()">
+														<xsl:variable name="var_DateTemp">
 															<xsl:call-template name="usgin:dateFormat">
 																<xsl:with-param name="inputDate" select="(caldate)"/>
 																<xsl:with-param name="inputTime" select="(time)"/>
@@ -3706,26 +3771,26 @@ utilitiesCommunication', concat(' ',string(.)))">
 									<!-- temporal extent, range of dates and time -->
 									<!-- each rngdates has a rngdates/begdate begtime, and /enddate /endtime -->
 									<xsl:for-each select="timeperd/timeinfo/rngdates">
-										<xsl:variable name="var_rngdatesNode" as="node()" select="."/>
+										<xsl:variable name="var_rngdatesNode" select="."/>
 										<gmd:temporalElement>
 											<xsl:if test="(fn:contains(fn:lower-case(fn:normalize-space(fn:string(begdate))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(begdate))), 'unpublished'))">
-												<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(begdate)))))"/></xsl:attribute>
+												<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(begdate)))))"/></xsl:attribute>
 											</xsl:if>
 											<gmd:EX_TemporalExtent>
-												<xsl:attribute name="id"><xsl:sequence select="fn:concat('DateRngEx.', generate-id())"/></xsl:attribute>
+												<xsl:attribute name="id"><xsl:value-of select="fn:concat('DateRngEx.', generate-id())"/></xsl:attribute>
 												<gmd:extent>
 													<gml:TimePeriod>
-														<xsl:attribute name="gml:id"><xsl:sequence select="fn:concat('bndTimePeriod.',generate-id())"/></xsl:attribute>
+														<xsl:attribute name="gml:id"><xsl:value-of select="fn:concat('bndTimePeriod.',generate-id())"/></xsl:attribute>
 														<gml:description>
-															<xsl:sequence select="xs:string(xs:string($var_metadataRoot/idinfo/timeperd/current))"/>
+															<xsl:value-of select="xs:string(xs:string($var_metadataRoot/idinfo/timeperd/current))"/>
 														</gml:description>
 														<gml:beginPosition>
-															<xsl:if test="fn:exists((if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/begdate))), 'present')) then 'now' else ()))">
-																<xsl:attribute name="indeterminatePosition"><xsl:sequence select="(if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/begdate))), 'present')) then 'now' else ())"/></xsl:attribute>
+															<xsl:if test="fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/begdate))), 'present')"> 
+																<xsl:attribute name="indeterminatePosition"><xsl:value-of select="string('now')"/></xsl:attribute>
 															</xsl:if>
-															<!-- xsl:sequence select="xs:string(xs:string(.))"/ -->
+															<!-- xsl:value-of select="xs:string(xs:string(.))"/ -->
 															<!-- can't use tempalate because that puts date in a gco:DateTime elelent, but needs to be gml:TimePosition here -->
-															<xsl:variable name="var_DateTemp" as="node()">
+															<xsl:variable name="var_DateTemp">
 																<xsl:call-template name="usgin:dateFormat">
 																	<xsl:with-param name="inputDate" select="(begdate)"/>
 																	<xsl:with-param name="inputTime" select="(begtime)"/>
@@ -3744,10 +3809,10 @@ utilitiesCommunication', concat(' ',string(.)))">
 														</gml:beginPosition>
 														<!-- /xsl:for-each -->
 														<gml:endPosition>
-															<xsl:if test="fn:exists((if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/enddate))), 'present')) then 'now' else ()))">
-																<xsl:attribute name="indeterminatePosition"><xsl:sequence select="(if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/enddate))), 'present')) then 'now' else ())"/></xsl:attribute>
+															<xsl:if test="fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/enddate))), 'present')"> 
+																<xsl:attribute name="indeterminatePosition"><xsl:value-of select="string('now')"/></xsl:attribute>
 															</xsl:if>
-															<xsl:variable name="var_DateTemp" as="node()">
+															<xsl:variable name="var_DateTemp">
 																<xsl:call-template name="usgin:dateFormat">
 																	<xsl:with-param name="inputDate" select="(enddate)"/>
 																	<xsl:with-param name="inputTime" select="(endtime)"/>
@@ -3775,7 +3840,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 							<xsl:for-each select="descript/supplinf">
 								<gmd:supplementalInformation>
 									<gco:CharacterString>
-										<xsl:sequence select="xs:string(.)"/>
+										<xsl:value-of select="xs:string(.)"/>
 									</gco:CharacterString>
 								</gmd:supplementalInformation>
 							</xsl:for-each>
@@ -3791,62 +3856,71 @@ utilitiesCommunication', concat(' ',string(.)))">
 						<gmd:MD_FeatureCatalogueDescription>
 							<gmd:includedWithDataset>
 								<gco:Boolean>
-									<xsl:variable name="var1068_cond_result_exists" as="xs:decimal" select="(if (fn:exists($var_metadataRoot/eainfo/detailed)) then xs:decimal(1) else xs:decimal(0))"/>
-									<xsl:sequence select="xs:string(fn:boolean($var1068_cond_result_exists))"/>
+							<!--		<xsl:variable name="var1068_cond_result_exists" as="xs:decimal" select="(if (fn:exists($var_metadataRoot/eainfo/detailed)) then xs:decimal(1) else xs:decimal(0))"/>-->
+									<xsl:value-of select="xs:string(fn:boolean(fn:exists($var_metadataRoot/eainfo/detailed)))"/>
 								</gco:Boolean>
 							</gmd:includedWithDataset>
 							<xsl:for-each select="$var_metadataRoot/eainfo/detailed">
 								<gmd:featureTypes>
 									<gco:LocalName>
-										<xsl:attribute name="codeSpace"><xsl:sequence select="fn:normalize-space(xs:string(enttyp/enttypl))"/></xsl:attribute>
+										<xsl:attribute name="codeSpace"><xsl:value-of select="fn:normalize-space(xs:string(enttyp/enttypl))"/></xsl:attribute>
 									</gco:LocalName>
 								</gmd:featureTypes>
 							</xsl:for-each>
 							<gmd:featureCatalogueCitation>
-								<xsl:variable name="var_eainfoDetailedExists" as="xs:decimal" select="(if (fn:exists($var_metadataRoot/eainfo/detailed)) then xs:decimal(1) else xs:decimal(0))"/>
-								<xsl:if test="fn:exists((if ((xs:string($var_eainfoDetailedExists) = 'false')) then () else 'unknown'))">
-									<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string((if ((xs:string($var_eainfoDetailedExists) = 'false')) then () else 'unknown'))"/></xsl:attribute>
+								<!--<xsl:variable name="var_eainfoDetailedExists" as="xs:decimal" select="(if (fn:exists($var_metadataRoot/eainfo/detailed)) then xs:decimal(1) else xs:decimal(0))"/>-->
+								<xsl:if test="fn:exists($var_metadataRoot/eainfo/detailed)">
+									<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
 								</xsl:if>
-								<xsl:variable name="var_eainfoEaoverLabel" as="xs:string?" select="(if (fn:exists($var_metadataRoot/eainfo/overview/eaover)) then 'Entity and Attribute Overview: ' else ())"/>
+								<xsl:variable name="var_eainfoEaoverLabel">  
+									<xsl:choose>
+										<xsl:when test="fn:exists($var_metadataRoot/eainfo/overview/eaover)"> 
+											<xsl:value-of select="string('Entity and Attribute Overview: ')"/>
+										</xsl:when>
+										<xsl:otherwise>
+											<xsl:value-of select="string('')"/>
+										</xsl:otherwise>
+									</xsl:choose>
+								</xsl:variable>
 								<xsl:if test="fn:exists($var_eainfoEaoverLabel)">
-									<xsl:variable name="var_eainfoEaoverText" as="xs:string?">
-										<xsl:variable name="var_eainfoEaoverTextSeq" as="xs:string*">
+									<xsl:variable name="var_eainfoEaoverText" >
+										<xsl:variable name="var_eainfoEaoverTextSeq" >
 											<xsl:for-each select="$var_metadataRoot/eainfo/overview">
-												<xsl:sequence select="xs:string(eaover)"/>
+												<xsl:value-of select="xs:string(eaover)"/>
 											</xsl:for-each>
 										</xsl:variable>
 										<xsl:if test="fn:exists($var_eainfoEaoverTextSeq)">
-											<xsl:sequence select="fn:string-join($var_eainfoEaoverTextSeq, ' ')"/>
+											<xsl:value-of select="fn:string-join($var_eainfoEaoverTextSeq, ' ')"/>
 										</xsl:if>
 									</xsl:variable>
 									<xsl:for-each select="$var_eainfoEaoverText">
-										<!-- xsl:variable name="var1074_cur_cond_result_exists" as="xs:string" select="."/ -->
-										<xsl:variable name="var_eainfoEadetcitLabel" as="xs:string?" select="(if (fn:exists($var_metadataRoot/eainfo/overview/eadetcit)) then '   Entity and Attribute Detail Citation: ' else ())"/>
+										<!-- xsl:variable name="var1074_cur_cond_result_exists"  select="."/ -->
+										<xsl:variable name="var_eainfoEadetcitLabel"  select="(if (fn:exists($var_metadataRoot/eainfo/overview/eadetcit)) then '   Entity and Attribute Detail Citation: ' else ())"/>
 										<xsl:if test="fn:exists($var_eainfoEadetcitLabel)">
-											<xsl:variable name="var_eainfoEadetcitText" as="xs:string?">
+											<xsl:variable name="var_eainfoEadetcitText" >
 												<xsl:if test="fn:exists($var_metadataRoot/eainfo/overview/eadetcit)">
-													<xsl:variable name="var1081_map_select_metadata" as="xs:string*">
+													<xsl:variable name="var1081_map_select_metadata" >
 														<xsl:for-each select="$var_metadataRoot/eainfo/overview/eadetcit">
-															<xsl:sequence select="xs:string(.)"/>
+															<xsl:value-of select="xs:string(.)"/>
 														</xsl:for-each>
 													</xsl:variable>
 													<xsl:if test="fn:exists($var1081_map_select_metadata)">
-														<xsl:sequence select="fn:string-join($var1081_map_select_metadata, ' ')"/>
+														<xsl:value-of select="fn:string-join($var1081_map_select_metadata, ' ')"/>
 													</xsl:if>
 												</xsl:if>
 											</xsl:variable>
 											<gmd:CI_Citation>
 												<gmd:title>
 													<gco:CharacterString>
-														<xsl:sequence select="'Entity and Attribute Information'"/>
+														<xsl:value-of select="'Entity and Attribute Information'"/>
 													</gco:CharacterString>
 												</gmd:title>
 												<gmd:date>
-													<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string('unknown')"/></xsl:attribute>
+													<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
 												</gmd:date>
 												<gmd:otherCitationDetails>
 													<gco:CharacterString>
-														<xsl:sequence select="fn:normalize-space(fn:concat($var_eainfoEaoverLabel, $var_eainfoEaoverText, $var_eainfoEadetcitLabel, $var_eainfoEadetcitText))"/>
+														<xsl:value-of select="fn:normalize-space(fn:concat($var_eainfoEaoverLabel, $var_eainfoEaoverText, $var_eainfoEadetcitLabel, $var_eainfoEadetcitText))"/>
 													</gco:CharacterString>
 												</gmd:otherCitationDetails>
 											</gmd:CI_Citation>
@@ -3865,7 +3939,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 										<xsl:when test="fn:contains(fn:lower-case(xs:string($var_metadataRoot/dataqual/cloud)), 'unknown')">
 											<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
 										</xsl:when>
-										<xsl:when test="xs:string($var_metadataRoot/dataqual/cloud[1]) castable as xs:decimal">
+										<xsl:when test="number($var_metadataRoot/dataqual/cloud[1])=number($var_metadataRoot/dataqual/cloud[1])">
 											<gco:Real>
 												<xsl:value-of select="xs:string($var_metadataRoot/dataqual/cloud[1])"/>
 											</gco:Real>
@@ -3885,61 +3959,61 @@ utilitiesCommunication', concat(' ',string(.)))">
 			<gmd:distributionInfo>
 				<gmd:MD_Distribution>
 					<xsl:for-each select="$var_metadataRoot/distinfo/stdorder/digform">
-						<xsl:variable name="var1090_digform" as="node()" select="."/>
+						<xsl:variable name="var1090_digform" select="."/>
 						<!-- distribution format -->
 						<gmd:distributionFormat>
 							<gmd:MD_Format>
 								<gmd:name>
 									<gco:CharacterString>
-										<xsl:sequence select="fn:normalize-space(xs:string(digtinfo/formname))"/>
+										<xsl:value-of select="fn:normalize-space(xs:string(digtinfo/formname))"/>
 									</gco:CharacterString>
 								</gmd:name>
 								<gmd:version>
-									<xsl:variable name="var1092_cond_result_exists" as="xs:string?">
+									<xsl:variable name="var1092_cond_result_exists" >
 										<xsl:choose>
 											<xsl:when test="$var1090_digform/digtinfo/formvern">
 												<xsl:for-each select="digtinfo/formvern">
-													<xsl:sequence select="xs:string(.)"/>
+													<xsl:value-of select="xs:string(.)"/>
 												</xsl:for-each>
 											</xsl:when>
 											<xsl:otherwise>
-												<xsl:sequence select="'unknown'"/>
+												<xsl:value-of select="'unknown'"/>
 											</xsl:otherwise>
 										</xsl:choose>
 									</xsl:variable>
 									<xsl:if test="fn:exists($var1092_cond_result_exists)">
 										<xsl:if test="($var1092_cond_result_exists = 'unknown')">
-											<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string('unknown')"/></xsl:attribute>
+											<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
 										</xsl:if>
 									</xsl:if>
 									<xsl:for-each select="digtinfo/formvern">
-										<xsl:variable name="var1099_cond_result_equal" as="xs:string?">
+										<xsl:variable name="var1099_cond_result_equal" >
 											<xsl:if test="not((fn:lower-case(xs:string(.)) = 'unknown'))">
-												<xsl:variable name="var1103_map_select_formverd" as="xs:string?">
+												<xsl:variable name="var1103_map_select_formverd" >
 													<xsl:for-each select="$var1090_digform/digtinfo/formverd">
-														<xsl:sequence select="fn:string(.)"/>
+														<xsl:value-of select="fn:string(.)"/>
 													</xsl:for-each>
 												</xsl:variable>
-												<xsl:variable name="var1102_cond_result_exists" as="xs:string?">
+												<xsl:variable name="var1102_cond_result_exists" >
 													<xsl:choose>
 														<xsl:when test="fn:exists($var1103_map_select_formverd)">
 															<xsl:for-each select="$var1090_digform/digtinfo/formverd">
-																<xsl:sequence select="fn:string(.)"/>
+																<xsl:value-of select="fn:string(.)"/>
 															</xsl:for-each>
 														</xsl:when>
 														<xsl:otherwise>
-															<xsl:sequence select="' '"/>
+															<xsl:value-of select="' '"/>
 														</xsl:otherwise>
 													</xsl:choose>
 												</xsl:variable>
 												<xsl:if test="fn:exists($var1102_cond_result_exists)">
-													<xsl:sequence select="fn:normalize-space(fn:string(fn:concat(xs:string(.), $var1102_cond_result_exists)))"/>
+													<xsl:value-of select="fn:normalize-space(fn:string(fn:concat(xs:string(.), $var1102_cond_result_exists)))"/>
 												</xsl:if>
 											</xsl:if>
 										</xsl:variable>
 										<xsl:if test="fn:exists($var1099_cond_result_equal)">
 											<gco:CharacterString>
-												<xsl:sequence select="$var1099_cond_result_equal"/>
+												<xsl:value-of select="$var1099_cond_result_equal"/>
 											</gco:CharacterString>
 										</xsl:if>
 									</xsl:for-each>
@@ -3947,14 +4021,14 @@ utilitiesCommunication', concat(' ',string(.)))">
 								<xsl:for-each select="digtinfo/formspec">
 									<gmd:specification>
 										<gco:CharacterString>
-											<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+											<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 										</gco:CharacterString>
 									</gmd:specification>
 								</xsl:for-each>
 								<xsl:for-each select="digtinfo/filedec">
 									<gmd:fileDecompressionTechnique>
 										<gco:CharacterString>
-											<xsl:sequence select="fn:normalize-space(xs:string(xs:string(.)))"/>
+											<xsl:value-of select="fn:normalize-space(xs:string(xs:string(.)))"/>
 										</gco:CharacterString>
 									</gmd:fileDecompressionTechnique>
 								</xsl:for-each>
@@ -3962,37 +4036,37 @@ utilitiesCommunication', concat(' ',string(.)))">
 						</gmd:distributionFormat>
 					</xsl:for-each>
 					<xsl:for-each select="$var_metadataRoot/distinfo">
-						<xsl:variable name="var1113_distinfo" as="node()" select="."/>
+						<xsl:variable name="var1113_distinfo" select="."/>
 						<!-- distributor information -->
 						<gmd:distributor>
 							<gmd:MD_Distributor>
 								<gmd:distributorContact>
 									<gmd:CI_ResponsibleParty>
-										<xsl:variable name="var_contactIndividual_exists" as="xs:string*">
+										<xsl:variable name="var_contactIndividual_exists" >
 											<xsl:choose>
 												<xsl:when test="fn:exists(distrib/cntinfo/cntperp/cntper)">
 													<!-- old xsl:when test="fn:exists($var5_map_select_metadata)" -->
 													<xsl:for-each select="distrib/cntinfo/cntperp/cntper">
-														<xsl:sequence select="xs:string(.)"/>
+														<xsl:value-of select="xs:string(.)"/>
 													</xsl:for-each>
 												</xsl:when>
 												<xsl:otherwise>
 													<xsl:for-each select="distrib/cntinfo/cntorgp/cntper">
-														<xsl:sequence select="xs:string(.)"/>
+														<xsl:value-of select="xs:string(.)"/>
 													</xsl:for-each>
 												</xsl:otherwise>
 											</xsl:choose>
 										</xsl:variable>
-										<xsl:variable name="var_contactOrganisation_exists" as="xs:string*">
+										<xsl:variable name="var_contactOrganisation_exists" >
 											<xsl:choose>
 												<xsl:when test="fn:exists(distrib/cntinfo/cntperp/cntorg)">
 													<xsl:for-each select="distrib/cntinfo/cntperp/cntorg">
-														<xsl:sequence select="xs:string(.)"/>
+														<xsl:value-of select="xs:string(.)"/>
 													</xsl:for-each>
 												</xsl:when>
 												<xsl:otherwise>
 													<xsl:for-each select="distrib/cntinfo/cntorgp/cntorg">
-														<xsl:sequence select="xs:string(.)"/>
+														<xsl:value-of select="xs:string(.)"/>
 													</xsl:for-each>
 												</xsl:otherwise>
 											</xsl:choose>
@@ -4024,14 +4098,14 @@ utilitiesCommunication', concat(' ',string(.)))">
 												<xsl:for-each select="distrib/cntinfo/hours">
 													<gmd:hoursOfService>
 														<gco:CharacterString>
-															<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+															<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 														</gco:CharacterString>
 													</gmd:hoursOfService>
 												</xsl:for-each>
 												<xsl:for-each select="distrib/cntinfo/cntinst">
 													<gmd:contactInstructions>
 														<gco:CharacterString>
-															<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+															<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 														</gco:CharacterString>
 													</gmd:contactInstructions>
 												</xsl:for-each>
@@ -4046,12 +4120,12 @@ utilitiesCommunication', concat(' ',string(.)))">
 								</gmd:distributorContact>
 								<!-- ordering process information -->
 								<xsl:for-each select="stdorder">
-									<xsl:variable name="var1159_stdorder" as="node()" select="."/>
+									<xsl:variable name="var1159_stdorder" select="."/>
 									<gmd:distributionOrderProcess>
 										<gmd:MD_StandardOrderProcess>
 											<gmd:fees>
 												<gco:CharacterString>
-													<xsl:sequence select="fn:normalize-space(xs:string(fees))"/>
+													<xsl:value-of select="fn:normalize-space(xs:string(fees))"/>
 												</gco:CharacterString>
 											</gmd:fees>
 											<xsl:for-each select="$var1113_distinfo/availabl">
@@ -4065,57 +4139,85 @@ utilitiesCommunication', concat(' ',string(.)))">
 												</xsl:if>
 											</xsl:for-each>
 											<xsl:for-each select="ordering">
-												<xsl:variable name="var1542_ordering" as="node()" select="."/>
+												<xsl:variable name="var1542_ordering" select="."/>
 												<gmd:orderingInstructions>
-													<xsl:variable name="var1544_cond_result_exists" as="xs:string?">
+													<xsl:variable name="var1544_cond_result_exists" >
 														<xsl:choose>
 															<xsl:when test="fn:exists($var1159_stdorder/digform/digtopt/onlinopt/accinstr)">
-																<xsl:variable name="var1559_map_select_digform" as="xs:string*">
+																<xsl:variable name="var1559_map_select_digform" >
 																	<xsl:for-each select="$var1159_stdorder/digform/digtopt/onlinopt/accinstr">
-																		<xsl:sequence select="xs:string(.)"/>
+																		<xsl:value-of select="xs:string(.)"/>
 																	</xsl:for-each>
 																</xsl:variable>
 																<xsl:if test="fn:exists($var1559_map_select_digform)">
-																	<xsl:sequence select="fn:string-join($var1559_map_select_digform, ' ')"/>
+																	<xsl:value-of select="fn:string-join($var1559_map_select_digform, ' ')"/>
 																</xsl:if>
 															</xsl:when>
 															<xsl:otherwise>
-																<xsl:sequence select="' '"/>
+																<xsl:value-of select="' '"/>
 															</xsl:otherwise>
 														</xsl:choose>
 													</xsl:variable>
 													<xsl:for-each select="$var1544_cond_result_exists">
-														<xsl:variable name="var1547_cond_result_exists" as="xs:string?">
+														<xsl:variable name="var1547_cond_result_exists" >
 															<xsl:choose>
 																<xsl:when test="$var1159_stdorder/nondig">
 																	<xsl:for-each select="$var1159_stdorder/nondig">
-																		<xsl:sequence select="xs:string(.)"/>
+																		<xsl:value-of select="xs:string(.)"/>
 																	</xsl:for-each>
 																</xsl:when>
 																<xsl:otherwise>
-																	<xsl:sequence select="' '"/>
+																	<xsl:value-of select="' '"/>
 																</xsl:otherwise>
 															</xsl:choose>
 														</xsl:variable>
 														<xsl:if test="fn:exists($var1547_cond_result_exists)">
-															<xsl:variable name="var1548_cond_result_exists" as="xs:string?">
+															<xsl:variable name="var1548_cond_result_exists" >
 																<xsl:choose>
 																	<xsl:when test="$var1113_distinfo/custom">
 																		<xsl:for-each select="$var1113_distinfo/custom">
-																			<xsl:sequence select="xs:string(.)"/>
+																			<xsl:value-of select="xs:string(.)"/>
 																		</xsl:for-each>
 																	</xsl:when>
 																	<xsl:otherwise>
-																		<xsl:sequence select="' '"/>
+																		<xsl:value-of select="' '"/>
 																	</xsl:otherwise>
 																</xsl:choose>
 															</xsl:variable>
 															<xsl:if test="fn:exists($var1548_cond_result_exists)">
 																<gco:CharacterString>
-																	<xsl:variable name="var1549_cond_result_exists" as="xs:string" select="(if (fn:exists($var1159_stdorder/digform/digtopt/onlinopt/accinstr)) then 'Access Instructions: ' else ' ')"/>
-																	<xsl:variable name="var1550_cond_result_exists" as="xs:string" select="(if (fn:exists($var1159_stdorder/nondig)) then 'Non-Digital Form: ' else ' ')"/>
-																	<xsl:variable name="var1551_cond_result_exists" as="xs:string" select="(if (fn:exists($var1113_distinfo/custom)) then ' Custom Order Process: ' else ' ')"/>
-																	<xsl:sequence select="fn:normalize-space(fn:string(fn:concat(fn:concat(fn:concat(fn:concat(fn:concat(fn:concat(fn:concat(fn:concat(fn:concat(fn:concat($var1549_cond_result_exists, .), $var1550_cond_result_exists), ' '), $var1547_cond_result_exists), ' '), 'Ordering Instructions: '), ' '), xs:string($var1542_ordering)), $var1551_cond_result_exists), $var1548_cond_result_exists)))"/>
+																	<xsl:variable name="var1549_cond_result_exists">  
+																		<xsl:choose>
+																			<xsl:when test="fn:exists($var1159_stdorder/digform/digtopt/onlinopt/accinstr)"> 
+																				<xsl:value-of select="string('Access Instructions: ' )"/>
+																			</xsl:when>
+																			<xsl:otherwise>
+																				<xsl:value-of select="string('')"/>
+																			</xsl:otherwise>
+																		</xsl:choose>
+																	</xsl:variable>	
+																	<xsl:variable name="var1550_cond_result_exists">
+																		<xsl:choose>
+																			<xsl:when test="fn:exists($var1159_stdorder/nondig)"> 
+																				<xsl:value-of select="string('Non-Digital Form: ')"/>
+																			</xsl:when>
+																			<xsl:otherwise>
+																				<xsl:value-of select="string('')"/>
+																			</xsl:otherwise>
+																		</xsl:choose>
+																		
+																	</xsl:variable>
+																	<xsl:variable name="var1551_cond_result_exists">
+																		<xsl:choose>
+																			<xsl:when test="fn:exists($var1113_distinfo/custom)"> 
+																				<xsl:value-of select="string(' Custom Order Process: ')"/>
+																			</xsl:when>
+																			<xsl:otherwise>
+																				<xsl:value-of select="string('')"/>
+																			</xsl:otherwise>
+																		</xsl:choose>
+																		
+																	</xsl:variable>																	<xsl:value-of select="fn:normalize-space(fn:concat($var1549_cond_result_exists, ., $var1550_cond_result_exists, ' ', $var1547_cond_result_exists, ' ', 'Ordering Instructions: ', xs:string($var1542_ordering), $var1551_cond_result_exists, $var1548_cond_result_exists))"/>
 																</gco:CharacterString>
 															</xsl:if>
 														</xsl:if>
@@ -4125,7 +4227,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 											<xsl:for-each select="turnarnd">
 												<gmd:turnaround>
 													<gco:CharacterString>
-														<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+														<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 													</gco:CharacterString>
 												</gmd:turnaround>
 											</xsl:for-each>
@@ -4140,24 +4242,24 @@ utilitiesCommunication', concat(' ',string(.)))">
 							<xsl:for-each select="$var_metadataRoot/distinfo/stdorder/digform/digtinfo/transize">
 								<gmd:transferSize>
 									<gco:Real>
-										<xsl:sequence select="xs:string(xs:double(.))"/>
+										<xsl:value-of select="xs:string(xs:double(.))"/>
 									</gco:Real>
 								</gmd:transferSize>
 							</xsl:for-each>
 							<!-- find text to put in online linkage description and name -->
-							<xsl:variable name="var_networkResourceName" as="xs:string*">
+							<xsl:variable name="var_networkResourceName" >
 								<xsl:for-each select="$var_metadataRoot/distinfo/stdorder/digform/digtopt/onlinopt/computer/networka/networkr">
 									<!-- The name of the data set on the network. When appropriate, Uniform Resource Locators (URL) should be provided. -->
-									<xsl:sequence select="xs:string(.)"/>
+									<xsl:value-of select="xs:string(.)"/>
 								</xsl:for-each>
 							</xsl:variable>
-							<xsl:variable name="var_ResourceIdentifer" as="xs:string*">
+							<xsl:variable name="var_ResourceIdentifer" >
 								<xsl:for-each select="$var_metadataRoot/distinfo/resdesc">
 									<!-- the identifier by which the distributor knows the data set. -->
-									<xsl:sequence select="xs:string(.)"/>
+									<xsl:value-of select="xs:string(.)"/>
 								</xsl:for-each>
 							</xsl:variable>
-							<xsl:variable name="var_OnlineName" as="xs:string*">
+							<xsl:variable name="var_OnlineName" >
 								<xsl:value-of select="concat((if (fn:exists($var_ResourceIdentifer)) then $var_ResourceIdentifer else 'NoResdesc'),									
 									(if (fn:exists($var_networkResourceName)) then $var_networkResourceName else ' NoNetworkr'))"/>
 							</xsl:variable>
@@ -4166,18 +4268,18 @@ utilitiesCommunication', concat(' ',string(.)))">
 									<gmd:CI_OnlineResource>
 										<gmd:linkage>
 											<gmd:URL>
-												<xsl:sequence select="xs:string(xs:anyURI(fn:normalize-space(.)))"/>
+												<xsl:value-of select="xs:string(xs:anyURI(fn:normalize-space(.)))"/>
 											</gmd:URL>
 										</gmd:linkage>
 										<gmd:name>
 											<gco:CharacterString>
-												<xsl:sequence select=" concat($var_OnlineName,substring(.,string-length(.)-3, 4))"/>
+												<xsl:value-of select=" concat($var_OnlineName,substring(.,string-length(.)-3, 4))"/>
 												<!-- if theres a 3 char file extension, it will help figure out the link -->
 											</gco:CharacterString>
 										</gmd:name>
 										<gmd:description>
 											<gco:CharacterString>
-												<xsl:sequence select="$var_OnlineName"/>
+												<xsl:value-of select="$var_OnlineName"/>
 											</gco:CharacterString>
 										</gmd:description>
 									</gmd:CI_OnlineResource>
@@ -4194,43 +4296,43 @@ utilitiesCommunication', concat(' ',string(.)))">
 										<gmd:name>
 											<xsl:variable name="var1618_map_result_groupitems" as="xs:string+">
 												<xsl:for-each select="$var_offlineMediaOptionGroup">
-													<xsl:sequence select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
+													<xsl:value-of select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
 												</xsl:for-each>
 											</xsl:variable>
-											<xsl:variable name="var1617_map_result_distinctvalues" as="xs:string*">
+											<xsl:variable name="var1617_map_result_distinctvalues" >
 												<xsl:for-each select="fn:distinct-values($var1618_map_result_groupitems)">
-													<xsl:variable name="var1621_result_mediumType" as="xs:string?">
+													<xsl:variable name="var1621_result_mediumType" >
 														<xsl:call-template name="vmf:mediumType">
 															<xsl:with-param name="input" select="fn:upper-case(.)"/>
 														</xsl:call-template>
 													</xsl:variable>
 													<xsl:if test="fn:exists($var1621_result_mediumType)">
-														<xsl:sequence select="$var1621_result_mediumType"/>
+														<xsl:value-of select="$var1621_result_mediumType"/>
 													</xsl:if>
 												</xsl:for-each>
 											</xsl:variable>
-											<xsl:variable name="var1608_cond_result_exists" as="xs:string?" select="(if (fn:exists($var1617_map_result_distinctvalues)) then fn:string-join($var1617_map_result_distinctvalues, ' ') else ())"/>
-											<xsl:variable name="var1581_cond_result_exists" as="xs:string?">
+											<xsl:variable name="var1608_cond_result_exists"  select="(if (fn:exists($var1617_map_result_distinctvalues)) then fn:string-join($var1617_map_result_distinctvalues, ' ') else ())"/>
+											<xsl:variable name="var1581_cond_result_exists" >
 												<xsl:if test="$var1608_cond_result_exists">
 													<xsl:variable name="var1611_map_result_groupitems" as="xs:string+">
 														<xsl:for-each select="$var_offlineMediaOptionGroup">
-															<xsl:sequence select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
+															<xsl:value-of select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
 														</xsl:for-each>
 													</xsl:variable>
-													<xsl:variable name="var1610_map_result_distinctvalues" as="xs:string*">
+													<xsl:variable name="var1610_map_result_distinctvalues" >
 														<xsl:for-each select="fn:distinct-values($var1611_map_result_groupitems)">
-															<xsl:variable name="var1614_result_mediumType" as="xs:string?">
+															<xsl:variable name="var1614_result_mediumType" >
 																<xsl:call-template name="vmf:mediumType">
 																	<xsl:with-param name="input" select="fn:upper-case(.)"/>
 																</xsl:call-template>
 															</xsl:variable>
 															<xsl:if test="fn:exists($var1614_result_mediumType)">
-																<xsl:sequence select="$var1614_result_mediumType"/>
+																<xsl:value-of select="$var1614_result_mediumType"/>
 															</xsl:if>
 														</xsl:for-each>
 													</xsl:variable>
 													<xsl:if test="fn:exists($var1610_map_result_distinctvalues)">
-														<xsl:sequence select="fn:string-join($var1610_map_result_distinctvalues, ' ')"/>
+														<xsl:value-of select="fn:string-join($var1610_map_result_distinctvalues, ' ')"/>
 													</xsl:if>
 												</xsl:if>
 											</xsl:variable>
@@ -4238,138 +4340,138 @@ utilitiesCommunication', concat(' ',string(.)))">
 												<gmd:MD_MediumNameCode>
 													<xsl:variable name="var1585_map_result_groupitems" as="xs:string+">
 														<xsl:for-each select="$var_offlineMediaOptionGroup">
-															<xsl:sequence select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
+															<xsl:value-of select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
 														</xsl:for-each>
 													</xsl:variable>
-													<xsl:variable name="var1584_map_result_distinctvalues" as="xs:string*">
+													<xsl:variable name="var1584_map_result_distinctvalues" >
 														<xsl:for-each select="fn:distinct-values($var1585_map_result_groupitems)">
-															<xsl:variable name="var1588_result_mediumType" as="xs:string?">
+															<xsl:variable name="var1588_result_mediumType" >
 																<xsl:call-template name="vmf:mediumType">
 																	<xsl:with-param name="input" select="fn:upper-case(.)"/>
 																</xsl:call-template>
 															</xsl:variable>
 															<xsl:if test="fn:exists($var1588_result_mediumType)">
-																<xsl:sequence select="$var1588_result_mediumType"/>
+																<xsl:value-of select="$var1588_result_mediumType"/>
 															</xsl:if>
 														</xsl:for-each>
 													</xsl:variable>
-													<xsl:variable name="var1583_cond_result_exists" as="xs:string?" select="(if (fn:exists($var1584_map_result_distinctvalues)) then fn:string-join($var1584_map_result_distinctvalues, ' ') else ())"/>
-													<xsl:variable name="var1582_cond_result_exists" as="xs:string?" select="(if (fn:exists($var1583_cond_result_exists)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MediumNameCode' else ())"/>
+													<xsl:variable name="var1583_cond_result_exists"  select="(if (fn:exists($var1584_map_result_distinctvalues)) then fn:string-join($var1584_map_result_distinctvalues, ' ') else ())"/>
+													<xsl:variable name="var1582_cond_result_exists"  select="(if (fn:exists($var1583_cond_result_exists)) then 'http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MediumNameCode' else ())"/>
 													<xsl:if test="fn:exists($var1582_cond_result_exists)">
-														<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI($var1582_cond_result_exists))"/></xsl:attribute>
+														<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI($var1582_cond_result_exists))"/></xsl:attribute>
 													</xsl:if>
-													<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI($var1581_cond_result_exists))"/></xsl:attribute>
+													<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI($var1581_cond_result_exists))"/></xsl:attribute>
 													<xsl:variable name="var1602_map_result_groupitems" as="xs:string+">
 														<xsl:for-each select="$var_offlineMediaOptionGroup">
-															<xsl:sequence select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
+															<xsl:value-of select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
 														</xsl:for-each>
 													</xsl:variable>
-													<xsl:variable name="var1601_map_result_distinctvalues" as="xs:string*">
+													<xsl:variable name="var1601_map_result_distinctvalues" >
 														<xsl:for-each select="fn:distinct-values($var1602_map_result_groupitems)">
-															<xsl:variable name="var1605_result_mediumType" as="xs:string?">
+															<xsl:variable name="var1605_result_mediumType" >
 																<xsl:call-template name="vmf:mediumType">
 																	<xsl:with-param name="input" select="fn:upper-case(.)"/>
 																</xsl:call-template>
 															</xsl:variable>
 															<xsl:if test="fn:exists($var1605_result_mediumType)">
-																<xsl:sequence select="$var1605_result_mediumType"/>
+																<xsl:value-of select="$var1605_result_mediumType"/>
 															</xsl:if>
 														</xsl:for-each>
 													</xsl:variable>
-													<xsl:variable name="var1592_cond_result_exists" as="xs:string?" select="(if (fn:exists($var1601_map_result_distinctvalues)) then fn:string-join($var1601_map_result_distinctvalues, ' ') else ())"/>
-													<xsl:variable name="var1591_cond_result_exists" as="xs:string?">
+													<xsl:variable name="var1592_cond_result_exists"  select="(if (fn:exists($var1601_map_result_distinctvalues)) then fn:string-join($var1601_map_result_distinctvalues, ' ') else ())"/>
+													<xsl:variable name="var1591_cond_result_exists" >
 														<xsl:if test="$var1592_cond_result_exists">
 															<xsl:variable name="var1595_map_result_groupitems" as="xs:string+">
 																<xsl:for-each select="$var_offlineMediaOptionGroup">
-																	<xsl:sequence select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
+																	<xsl:value-of select="fn:normalize-space(xs:string(xs:string(offmedia)))"/>
 																</xsl:for-each>
 															</xsl:variable>
-															<xsl:variable name="var1594_map_result_distinctvalues" as="xs:string*">
+															<xsl:variable name="var1594_map_result_distinctvalues" >
 																<xsl:for-each select="fn:distinct-values($var1595_map_result_groupitems)">
-																	<xsl:variable name="var1598_result_mediumCode" as="xs:string?">
+																	<xsl:variable name="var1598_result_mediumCode" >
 																		<xsl:call-template name="vmf:mediumCode">
 																			<xsl:with-param name="input" select="fn:upper-case(.)"/>
 																		</xsl:call-template>
 																	</xsl:variable>
 																	<xsl:if test="fn:exists($var1598_result_mediumCode)">
-																		<xsl:sequence select="$var1598_result_mediumCode"/>
+																		<xsl:value-of select="$var1598_result_mediumCode"/>
 																	</xsl:if>
 																</xsl:for-each>
 															</xsl:variable>
 															<xsl:if test="fn:exists($var1594_map_result_distinctvalues)">
-																<xsl:sequence select="fn:string-join($var1594_map_result_distinctvalues, ' ')"/>
+																<xsl:value-of select="fn:string-join($var1594_map_result_distinctvalues, ' ')"/>
 															</xsl:if>
 														</xsl:if>
 													</xsl:variable>
 													<xsl:if test="fn:exists($var1591_cond_result_exists)">
-														<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI($var1591_cond_result_exists))"/></xsl:attribute>
+														<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI($var1591_cond_result_exists))"/></xsl:attribute>
 													</xsl:if>
-													<xsl:sequence select="$var1581_cond_result_exists"/>
+													<xsl:value-of select="$var1581_cond_result_exists"/>
 												</gmd:MD_MediumNameCode>
 											</xsl:if>
 										</gmd:name>
 										<xsl:for-each select="$var_offlineMediaOptionGroup/reccap/recden">
 											<gmd:density>
 												<gco:Real>
-													<xsl:sequence select="xs:string(xs:double(.))"/>
+													<xsl:value-of select="xs:string(xs:double(.))"/>
 												</gco:Real>
 											</gmd:density>
 										</xsl:for-each>
 										<xsl:for-each select="$var_offlineMediaOptionGroup/reccap">
 											<gmd:densityUnits>
 												<gco:CharacterString>
-													<xsl:sequence select="xs:string(recdenu)"/>
+													<xsl:value-of select="xs:string(recdenu)"/>
 												</gco:CharacterString>
 											</gmd:densityUnits>
 										</xsl:for-each>
 										<gmd:mediumFormat>
-											<xsl:variable name="var1638_map_result_groupitems" as="xs:string*">
+											<xsl:variable name="var1638_map_result_groupitems" >
 												<xsl:for-each select="$var_offlineMediaOptionGroup/recfmt">
-													<xsl:variable name="var1641_result_encodingType" as="xs:string?">
+													<xsl:variable name="var1641_result_encodingType" >
 														<xsl:call-template name="vmf:encodingType">
 															<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(xs:string(.))))"/>
 														</xsl:call-template>
 													</xsl:variable>
 													<xsl:if test="fn:exists($var1641_result_encodingType)">
-														<xsl:sequence select="$var1641_result_encodingType"/>
+														<xsl:value-of select="$var1641_result_encodingType"/>
 													</xsl:if>
 												</xsl:for-each>
 											</xsl:variable>
-											<xsl:variable name="var1628_cond_result_exists" as="xs:string?" select="(if (fn:exists($var1638_map_result_groupitems)) then fn:string-join($var1638_map_result_groupitems, ' ') else ())"/>
+											<xsl:variable name="var1628_cond_result_exists"  select="(if (fn:exists($var1638_map_result_groupitems)) then fn:string-join($var1638_map_result_groupitems, ' ') else ())"/>
 											<xsl:for-each select="$var1628_cond_result_exists">
 												<gmd:MD_MediumFormatCode>
-													<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MediumFormatCode'))"/></xsl:attribute>
-													<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI(.))"/></xsl:attribute>
-													<xsl:variable name="var1634_map_result_groupitems" as="xs:string*">
+													<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MediumFormatCode'))"/></xsl:attribute>
+													<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
+													<xsl:variable name="var1634_map_result_groupitems" >
 														<xsl:for-each select="$var_offlineMediaOptionGroup/recfmt">
-															<xsl:variable name="var1637_result_encodingCode" as="xs:string?">
+															<xsl:variable name="var1637_result_encodingCode" >
 																<xsl:call-template name="vmf:encodingCode">
 																	<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(xs:string(.))))"/>
 																</xsl:call-template>
 															</xsl:variable>
 															<xsl:if test="fn:exists($var1637_result_encodingCode)">
-																<xsl:sequence select="$var1637_result_encodingCode"/>
+																<xsl:value-of select="$var1637_result_encodingCode"/>
 															</xsl:if>
 														</xsl:for-each>
 													</xsl:variable>
-													<xsl:variable name="var1631_cond_result_exists" as="xs:string?" select="(if (fn:exists($var1634_map_result_groupitems)) then fn:string-join($var1634_map_result_groupitems, ' ') else ())"/>
+													<xsl:variable name="var1631_cond_result_exists"  select="(if (fn:exists($var1634_map_result_groupitems)) then fn:string-join($var1634_map_result_groupitems, ' ') else ())"/>
 													<xsl:for-each select="$var1631_cond_result_exists">
-														<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI(.))"/></xsl:attribute>
+														<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI(.))"/></xsl:attribute>
 													</xsl:for-each>
-													<xsl:sequence select="."/>
+													<xsl:value-of select="."/>
 												</gmd:MD_MediumFormatCode>
 											</xsl:for-each>
 										</gmd:mediumFormat>
-										<xsl:variable name="var1642_cond_result_exists" as="xs:string?" select="(if (fn:exists($var_metadataRoot/distinfo/stdorder/digform/digtinfo/formcont)) then 'Format Information Content:  ' else ())"/>
+										<xsl:variable name="var1642_cond_result_exists"  select="(if (fn:exists($var_metadataRoot/distinfo/stdorder/digform/digtinfo/formcont)) then 'Format Information Content:  ' else ())"/>
 										<xsl:if test="fn:exists($var1642_cond_result_exists)">
 											<xsl:for-each select="$var_metadataRoot/distinfo/stdorder/digform/digtinfo/formcont">
-												<xsl:variable name="var1643_formcont" as="node()" select="."/>
-												<xsl:variable name="var1645_cond_result_exists" as="xs:string?" select="(if (fn:exists($var_offlineMediaOptionGroup/compat)) then ' Compatibility Information: ' else ())"/>
+												<xsl:variable name="var1643_formcont" select="."/>
+												<xsl:variable name="var1645_cond_result_exists"  select="(if (fn:exists($var_offlineMediaOptionGroup/compat)) then ' Compatibility Information: ' else ())"/>
 												<xsl:if test="fn:exists($var1645_cond_result_exists)">
 													<xsl:for-each select="$var_offlineMediaOptionGroup/compat">
 														<gmd:mediumNote>
 															<gco:CharacterString>
-																<xsl:sequence select="fn:concat(fn:concat(fn:concat($var1642_cond_result_exists, fn:normalize-space(xs:string($var1643_formcont))), $var1645_cond_result_exists), xs:string(.))"/>
+																<xsl:value-of select="fn:concat(fn:concat(fn:concat($var1642_cond_result_exists, fn:normalize-space(xs:string($var1643_formcont))), $var1645_cond_result_exists), xs:string(.))"/>
 															</gco:CharacterString>
 														</gmd:mediumNote>
 													</xsl:for-each>
@@ -4402,16 +4504,16 @@ utilitiesCommunication', concat(' ',string(.)))">
 										<gmd:DQ_AbsoluteExternalPositionalAccuracy>
 											<gmd:nameOfMeasure>
 												<gco:CharacterString>
-													<xsl:sequence select="'Horizontal Positional Accuracy'"/>
+													<xsl:value-of select="'Horizontal Positional Accuracy'"/>
 												</gco:CharacterString>
 											</gmd:nameOfMeasure>
 											<gmd:measureDescription>
 												<gco:CharacterString>
-													<xsl:variable name="DQMeasureDesc" as="xs:integer">
+													<xsl:variable name="DQMeasureDesc" >
 														<xsl:value-of select="xs:integer(fn:count(/metadata/dataqual/posacc/horizpa/qhorizpa/horizpae))"/>
 													</xsl:variable>
 													<xsl:for-each select="/metadata/dataqual/posacc/horizpa/qhorizpa[1]/horizpae">
-														<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+														<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 														<xsl:if test="($DQMeasureDesc>1)">
 															<xsl:value-of select="xs:string(' ')"/>
 														</xsl:if>
@@ -4420,19 +4522,19 @@ utilitiesCommunication', concat(' ',string(.)))">
 											</gmd:measureDescription>
 											<gmd:evaluationMethodDescription>
 												<gco:CharacterString>
-													<xsl:sequence select="fn:normalize-space(xs:string(horizpar))"/>
+													<xsl:value-of select="fn:normalize-space(xs:string(horizpar))"/>
 												</gco:CharacterString>
 											</gmd:evaluationMethodDescription>
 											<gmd:result>
 												<gmd:DQ_QuantitativeResult>
 													<gmd:valueUnit>
 														<gml:BaseUnit>
-															<xsl:attribute name="gml:id"><xsl:sequence select="fn:concat('uom.',generate-id())"/></xsl:attribute>
+															<xsl:attribute name="gml:id"><xsl:value-of select="fn:concat('uom.',generate-id())"/></xsl:attribute>
 															<gml:identifier>
-																<xsl:attribute name="codeSpace"><xsl:sequence select="fn:concat('uom.',generate-id())"/></xsl:attribute>
+																<xsl:attribute name="codeSpace"><xsl:value-of select="fn:concat('uom.',generate-id())"/></xsl:attribute>
 															</gml:identifier>
 															<gml:unitsSystem>
-																<xsl:attribute name="xlink:href"><xsl:sequence select="xs:string(xs:anyURI('http://www.bipm.org/en/si/'))"/></xsl:attribute>
+																<xsl:attribute name="xlink:href"><xsl:value-of select="xs:string(xs:anyURI('http://www.bipm.org/en/si/'))"/></xsl:attribute>
 															</gml:unitsSystem>
 														</gml:BaseUnit>
 													</gmd:valueUnit>
@@ -4453,16 +4555,16 @@ utilitiesCommunication', concat(' ',string(.)))">
 										<gmd:DQ_AbsoluteExternalPositionalAccuracy>
 											<gmd:nameOfMeasure>
 												<gco:CharacterString>
-													<xsl:sequence select="'Vertical Positional Accuracy'"/>
+													<xsl:value-of select="'Vertical Positional Accuracy'"/>
 												</gco:CharacterString>
 											</gmd:nameOfMeasure>
 											<gmd:measureDescription>
 												<gco:CharacterString>
-													<xsl:variable name="DQMeasureDesc" as="xs:integer">
+													<xsl:variable name="DQMeasureDesc" >
 														<xsl:value-of select="xs:integer(fn:count(/metadata/dataqual/posacc/vertacc/qvertpa/vertacce[1]))"/>
 													</xsl:variable>
 													<xsl:for-each select="/metadata/dataqual/posacc/vertacc/qvertpa/vertacce[1]">
-														<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+														<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 														<xsl:if test="($DQMeasureDesc>1)">
 															<xsl:value-of select="xs:string(' ')"/>
 														</xsl:if>
@@ -4471,19 +4573,19 @@ utilitiesCommunication', concat(' ',string(.)))">
 											</gmd:measureDescription>
 											<gmd:evaluationMethodDescription>
 												<gco:CharacterString>
-													<xsl:sequence select="fn:normalize-space(xs:string(vertaccr))"/>
+													<xsl:value-of select="fn:normalize-space(xs:string(vertaccr))"/>
 												</gco:CharacterString>
 											</gmd:evaluationMethodDescription>
 											<gmd:result>
 												<gmd:DQ_QuantitativeResult>
 													<gmd:valueUnit>
 														<gml:BaseUnit>
-															<xsl:attribute name="gml:id"><xsl:sequence select="fn:concat('uom.',generate-id())"/></xsl:attribute>
+															<xsl:attribute name="gml:id"><xsl:value-of select="fn:concat('uom.',generate-id())"/></xsl:attribute>
 															<gml:identifier>
-																<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI('meters'))"/></xsl:attribute>
+																<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI('meters'))"/></xsl:attribute>
 															</gml:identifier>
 															<gml:unitsSystem>
-																<xsl:attribute name="xlink:href"><xsl:sequence select="xs:string(xs:anyURI('http://www.bipm.org/en/si/'))"/></xsl:attribute>
+																<xsl:attribute name="xlink:href"><xsl:value-of select="xs:string(xs:anyURI('http://www.bipm.org/en/si/'))"/></xsl:attribute>
 															</gml:unitsSystem>
 														</gml:BaseUnit>
 													</gmd:valueUnit>
@@ -4505,7 +4607,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 											<gco:CharacterString>
 												<xsl:choose>
 													<xsl:when test="fn:exists(complete)">
-														<xsl:sequence select="fn:normalize-space(xs:string(complete))"/>
+														<xsl:value-of select="fn:normalize-space(xs:string(complete))"/>
 													</xsl:when>
 													<xsl:otherwise>
 														<xsl:value-of select="xs:string('missing')"/>
@@ -4516,7 +4618,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 										<gmd:result>
 											<xsl:variable name="var1664_cond_result_exists" as="xs:decimal" select="(if (fn:exists($var_metadataRoot/eainfo/detailed)) then xs:decimal(1) else xs:decimal(0))"/>
 											<xsl:if test="fn:exists((if ((xs:string($var1664_cond_result_exists) = 'false')) then () else 'unknown'))">
-												<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string((if ((xs:string($var1664_cond_result_exists) = 'false')) then () else 'unknown')))"/></xsl:attribute>
+												<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string((if ((xs:string($var1664_cond_result_exists) = 'false')) then () else 'unknown')))"/></xsl:attribute>
 											</xsl:if>
 										</gmd:result>
 									</gmd:DQ_CompletenessOmission>
@@ -4528,36 +4630,36 @@ utilitiesCommunication', concat(' ',string(.)))">
 									<gmd:DQ_ConceptualConsistency>
 										<gmd:measureDescription>
 											<gco:CharacterString>
-												<xsl:sequence select="fn:normalize-space(xs:string(logic))"/>
+												<xsl:value-of select="fn:normalize-space(xs:string(logic))"/>
 											</gco:CharacterString>
 										</gmd:measureDescription>
 										<gmd:result>
-											<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string('unknown'))"/></xsl:attribute>
+											<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string('unknown'))"/></xsl:attribute>
 										</gmd:result>
 									</gmd:DQ_ConceptualConsistency>
 								</gmd:report>
 							</xsl:if>
 							<!-- attribute accuracy information -->
 							<xsl:for-each select="attracc">
-								<xsl:variable name="var_attributeAccuracyNode" as="node()" select="."/>
+								<xsl:variable name="var_attributeAccuracyNode" select="."/>
 								<xsl:for-each select="qattracc">
 									<xsl:if test="fn:exists(attraccv)">
 										<gmd:report>
 											<gmd:DQ_QuantitativeAttributeAccuracy>
 												<gmd:nameOfMeasure>
 													<gco:CharacterString>
-														<xsl:sequence select="'Quantitative Attribute Accuracy Assessment'"/>
+														<xsl:value-of select="'Quantitative Attribute Accuracy Assessment'"/>
 													</gco:CharacterString>
 												</gmd:nameOfMeasure>
 												<gmd:measureDescription>
 													<gco:CharacterString>
-														<xsl:sequence select="xs:string(attracce)"/>
+														<xsl:value-of select="xs:string(attracce)"/>
 													</gco:CharacterString>
 												</gmd:measureDescription>
 												<gmd:evaluationMethodDescription>
 													<xsl:for-each select="$var_attributeAccuracyNode/attraccr">
 														<gco:CharacterString>
-															<xsl:sequence select="xs:string(.)"/>
+															<xsl:value-of select="xs:string(.)"/>
 														</gco:CharacterString>
 													</xsl:for-each>
 												</gmd:evaluationMethodDescription>
@@ -4567,11 +4669,11 @@ utilitiesCommunication', concat(' ',string(.)))">
 														<gmd:value>
 															<!--<xsl:for-each select="attraccv"> -->
 															<gco:Record>
-																<xsl:variable name="DataQualResult" as="xs:integer">
+																<xsl:variable name="DataQualResult" >
 																	<xsl:value-of select="xs:integer(fn:count(/metadata/dataqual/attracc/qattracc/attraccv))"/>
 																</xsl:variable>
 																<xsl:for-each select="/metadata/dataqual/attracc/qattracc/attraccv">
-																	<xsl:sequence select="fn:normalize-space(xs:string(.))"/>
+																	<xsl:value-of select="fn:normalize-space(xs:string(.))"/>
 																	<xsl:if test="($DataQualResult>1)">
 																		<xsl:value-of select="xs:string(' ')"/>
 																	</xsl:if>
@@ -4594,12 +4696,12 @@ utilitiesCommunication', concat(' ',string(.)))">
 											<gco:CharacterString>missing</gco:CharacterString>
 										</gmd:statement>
 										<xsl:for-each select="lineage/procstep">
-											<xsl:variable name="var_lineageProcessingStepNode" as="node()" select="."/>
+											<xsl:variable name="var_lineageProcessingStepNode" select="."/>
 											<gmd:processStep>
 												<gmd:LI_ProcessStep>
 													<gmd:description>
 														<gco:CharacterString>
-															<xsl:sequence select="xs:string(procdesc)"/>
+															<xsl:value-of select="xs:string(procdesc)"/>
 														</gco:CharacterString>
 													</gmd:description>
 													<gmd:dateTime>
@@ -4611,30 +4713,30 @@ utilitiesCommunication', concat(' ',string(.)))">
 													<xsl:for-each select="proccont">
 														<gmd:processor>
 															<gmd:CI_ResponsibleParty>
-																<xsl:variable name="var_contactIndividual_exists" as="xs:string*">
+																<xsl:variable name="var_contactIndividual_exists" >
 																	<xsl:choose>
 																		<xsl:when test="fn:exists(cntinfo/cntperp/cntper)">
 																			<xsl:for-each select="cntinfo/cntperp/cntper">
-																				<xsl:sequence select="xs:string(.)"/>
+																				<xsl:value-of select="xs:string(.)"/>
 																			</xsl:for-each>
 																		</xsl:when>
 																		<xsl:otherwise>
 																			<xsl:for-each select="cntinfo/cntorgp/cntper">
-																				<xsl:sequence select="xs:string(.)"/>
+																				<xsl:value-of select="xs:string(.)"/>
 																			</xsl:for-each>
 																		</xsl:otherwise>
 																	</xsl:choose>
 																</xsl:variable>
-																<xsl:variable name="var_contactOrganisation_exists" as="xs:string*">
+																<xsl:variable name="var_contactOrganisation_exists" >
 																	<xsl:choose>
 																		<xsl:when test="fn:exists(cntinfo/cntperp/cntorg)">
 																			<xsl:for-each select="cntinfo/cntperp/cntorg">
-																				<xsl:sequence select="xs:string(.)"/>
+																				<xsl:value-of select="xs:string(.)"/>
 																			</xsl:for-each>
 																		</xsl:when>
 																		<xsl:otherwise>
 																			<xsl:for-each select="cntinfo/cntorgp/cntorg">
-																				<xsl:sequence select="xs:string(.)"/>
+																				<xsl:value-of select="xs:string(.)"/>
 																			</xsl:for-each>
 																		</xsl:otherwise>
 																	</xsl:choose>
@@ -4667,14 +4769,14 @@ utilitiesCommunication', concat(' ',string(.)))">
 																		<gmd:hoursOfService>
 																			<xsl:for-each select="cntinfo/hours">
 																				<gco:CharacterString>
-																					<xsl:sequence select="xs:string(.)"/>
+																					<xsl:value-of select="xs:string(.)"/>
 																				</gco:CharacterString>
 																			</xsl:for-each>
 																		</gmd:hoursOfService>
 																		<gmd:contactInstructions>
 																			<xsl:for-each select="cntinfo/cntinst">
 																				<gco:CharacterString>
-																					<xsl:sequence select="xs:string(.)"/>
+																					<xsl:value-of select="xs:string(.)"/>
 																				</gco:CharacterString>
 																			</xsl:for-each>
 																		</gmd:contactInstructions>
@@ -4691,25 +4793,25 @@ utilitiesCommunication', concat(' ',string(.)))">
 													</xsl:for-each>
 													<xsl:for-each-group select="." group-by="grp:sourcesUsed(.)">
 														<xsl:variable name="var1800_cur_result_groupby" as="item()+" select="current-group()"/>
-														<xsl:variable name="var1801_cur_result_groupby" as="xs:string" select="current-grouping-key()"/>
+														<xsl:variable name="var1801_cur_result_groupby"  select="current-grouping-key()"/>
 														<gmd:source>
 															<gmd:LI_Source>
 																<gmd:sourceCitation>
 																	<gmd:CI_Citation>
 																		<gmd:title>
 																			<gco:CharacterString>
-																				<xsl:sequence select="$var1801_cur_result_groupby"/>
+																				<xsl:value-of select="$var1801_cur_result_groupby"/>
 																			</gco:CharacterString>
 																		</gmd:title>
 																		<xsl:for-each select="$var1800_cur_result_groupby/srcprod">
 																			<gmd:alternateTitle>
 																				<gco:CharacterString>
-																					<xsl:sequence select="xs:string(.)"/>
+																					<xsl:value-of select="xs:string(.)"/>
 																				</gco:CharacterString>
 																			</gmd:alternateTitle>
 																		</xsl:for-each>
 																		<gmd:date>
-																			<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string('unknown'))"/></xsl:attribute>
+																			<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string('unknown'))"/></xsl:attribute>
 																		</gmd:date>
 																	</gmd:CI_Citation>
 																</gmd:sourceCitation>
@@ -4720,31 +4822,31 @@ utilitiesCommunication', concat(' ',string(.)))">
 											</gmd:processStep>
 										</xsl:for-each>
 										<xsl:for-each select="lineage/srcinfo">
-											<xsl:variable name="var_lineageSourceInfoNode" as="node()" select="."/>
+											<xsl:variable name="var_lineageSourceInfoNode" select="."/>
 											<gmd:source>
 												<gmd:LI_Source>
 													<xsl:if test="fn:exists(strcontr) or fn:exists(typesrc)">
 														<gmd:description>
 															<gco:CharacterString>
-																<xsl:sequence select="fn:concat('Source Contribution: ', xs:string(srccontr), ' ', xs:string(typesrc))"/>
+																<xsl:value-of select="fn:concat('Source Contribution: ', xs:string(srccontr), ' ', xs:string(typesrc))"/>
 															</gco:CharacterString>
 														</gmd:description>
 													</xsl:if>
-													<xsl:if test="fn:exists(srcscale) and ((fn:lower-case(fn:string(srcscale)) = 'unknown') or (srcscale castable as xs:integer))">
+													<xsl:if test="fn:exists(srcscale) and ((fn:lower-case(fn:string(srcscale)) = 'unknown') or (number(srcscale)=number(srcscale)))">
 														<gmd:scaleDenominator>
 															<gmd:MD_RepresentativeFraction>
 																<gmd:denominator>
 																	<xsl:choose>
 																		<xsl:when test="(fn:lower-case(fn:string(srcscale)) = 'unknown')">
-																			<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string('unknown')"/></xsl:attribute>
+																			<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('unknown')"/></xsl:attribute>
 																		</xsl:when>
-																		<xsl:when test="srcscale castable as xs:integer">
+																		<xsl:when test="number(srcscale)=number(srcscale)">
 																			<gco:Integer>
-																				<xsl:sequence select="xs:string(xs:integer(srcscale))"/>
+																				<xsl:value-of select="xs:string(xs:integer(srcscale))"/>
 																			</gco:Integer>
 																		</xsl:when>
 																		<xsl:otherwise>
-																			<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string('missing')"/></xsl:attribute>
+																			<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string('missing')"/></xsl:attribute>
 																		</xsl:otherwise>
 																	</xsl:choose>
 																</gmd:denominator>
@@ -4755,13 +4857,13 @@ utilitiesCommunication', concat(' ',string(.)))">
 														<gmd:CI_Citation>
 															<gmd:title>
 																<gco:CharacterString>
-																	<xsl:sequence select="xs:string(srccite/citeinfo/title)"/>
+																	<xsl:value-of select="xs:string(srccite/citeinfo/title)"/>
 																</gco:CharacterString>
 															</gmd:title>
 															<xsl:if test="fn:exists(srccitea)">
 																<gmd:alternateTitle>
 																	<gco:CharacterString>
-																		<xsl:sequence select="xs:string(srccitea)"/>
+																		<xsl:value-of select="xs:string(srccitea)"/>
 																	</gco:CharacterString>
 																</gmd:alternateTitle>
 															</xsl:if>
@@ -4775,10 +4877,10 @@ utilitiesCommunication', concat(' ',string(.)))">
 																	</gmd:date>
 																	<gmd:dateType>
 																		<gmd:CI_DateTypeCode>
-																			<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode'))"/></xsl:attribute>
-																			<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI('publication'))"/></xsl:attribute>
-																			<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI('002'))"/></xsl:attribute>
-																			<xsl:sequence select="'publication'"/>
+																			<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode'))"/></xsl:attribute>
+																			<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI('publication'))"/></xsl:attribute>
+																			<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI('002'))"/></xsl:attribute>
+																			<xsl:value-of select="'publication'"/>
 																		</gmd:CI_DateTypeCode>
 																	</gmd:dateType>
 																</gmd:CI_Date>
@@ -4786,25 +4888,25 @@ utilitiesCommunication', concat(' ',string(.)))">
 															<xsl:if test="fn:exists(srccite/citeinfo/edition)">
 																<gmd:edition>
 																	<gco:CharacterString>
-																		<xsl:sequence select="xs:string(srccite/citeinfo/edition)"/>
+																		<xsl:value-of select="xs:string(srccite/citeinfo/edition)"/>
 																	</gco:CharacterString>
 																</gmd:edition>
 															</xsl:if>
 															<xsl:for-each-group select="srccite/citeinfo" group-by="grp:origins(.)">
-																<xsl:variable name="var1881_cur_result_groupby" as="xs:string" select="current-grouping-key()"/>
+																<xsl:variable name="var1881_cur_result_groupby"  select="current-grouping-key()"/>
 																<gmd:citedResponsibleParty>
 																	<gmd:CI_ResponsibleParty>
 																		<gmd:organisationName>
 																			<gco:CharacterString>
-																				<xsl:sequence select="$var1881_cur_result_groupby"/>
+																				<xsl:value-of select="$var1881_cur_result_groupby"/>
 																			</gco:CharacterString>
 																		</gmd:organisationName>
 																		<gmd:role>
 																			<gmd:CI_RoleCode>
-																				<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode'))"/></xsl:attribute>
-																				<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI('resourceProvider'))"/></xsl:attribute>
-																				<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI('001'))"/></xsl:attribute>
-																				<xsl:sequence select="'resourceProvider'"/>
+																				<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode'))"/></xsl:attribute>
+																				<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI('resourceProvider'))"/></xsl:attribute>
+																				<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI('001'))"/></xsl:attribute>
+																				<xsl:value-of select="'resourceProvider'"/>
 																			</gmd:CI_RoleCode>
 																		</gmd:role>
 																	</gmd:CI_ResponsibleParty>
@@ -4812,36 +4914,36 @@ utilitiesCommunication', concat(' ',string(.)))">
 															</xsl:for-each-group>
 															<xsl:if test="fn:exists(srccite/citeinfo/geoform) ">
 																<gmd:presentationForm>
-																	<xsl:variable name="var1883_cond_result_exists" as="xs:string?">
+																	<xsl:variable name="var1883_cond_result_exists" >
 																		<xsl:choose>
 																			<xsl:when test="$var_lineageSourceInfoNode/srccite/citeinfo/geoform">
 																				<!--xsl:for-each select="srccite/citeinfo/geoform" -->
-																				<xsl:variable name="var_sourceDocTypeLookup" as="xs:string?">
+																				<xsl:variable name="var_sourceDocTypeLookup" >
 																					<xsl:call-template name="vmf:docType">
 																						<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(srccite/citeinfo/geoform)))"/>
 																					</xsl:call-template>
 																				</xsl:variable>
 																				<xsl:if test="fn:exists($var_sourceDocTypeLookup)">
-																					<xsl:sequence select="$var_sourceDocTypeLookup"/>
+																					<xsl:value-of select="$var_sourceDocTypeLookup"/>
 																				</xsl:if>
 																				<!-- /xsl:for-each -->
 																			</xsl:when>
 																			<xsl:otherwise>
 																				<xsl:for-each select="srccite/citeinfo/geoform">
-																					<xsl:sequence select="fn:normalize-space(xs:string(xs:string(.)))"/>
+																					<xsl:value-of select="fn:normalize-space(xs:string(xs:string(.)))"/>
 																				</xsl:for-each>
 																			</xsl:otherwise>
 																		</xsl:choose>
 																	</xsl:variable>
 																	<gmd:CI_PresentationFormCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode">
-																		<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string($var1883_cond_result_exists)"/></xsl:attribute>
-																		<xsl:variable name="var_presentationFormCodespaceLookup" as="xs:string?">
+																		<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string($var1883_cond_result_exists)"/></xsl:attribute>
+																		<xsl:variable name="var_presentationFormCodespaceLookup" >
 																			<xsl:call-template name="vmf:docCode">
 																				<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(srccite/citeinfo/geoform)))"/>
 																			</xsl:call-template>
 																		</xsl:variable>
-																		<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string($var_presentationFormCodespaceLookup)"/></xsl:attribute>
-																		<xsl:sequence select="$var1883_cond_result_exists"/>
+																		<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string($var_presentationFormCodespaceLookup)"/></xsl:attribute>
+																		<xsl:value-of select="$var1883_cond_result_exists"/>
 																	</gmd:CI_PresentationFormCode>
 																</gmd:presentationForm>
 															</xsl:if>
@@ -4851,14 +4953,14 @@ utilitiesCommunication', concat(' ',string(.)))">
 																		<gmd:name>
 																			<xsl:for-each select="srccite/citeinfo/serinfo">
 																				<gco:CharacterString>
-																					<xsl:sequence select="xs:string(sername)"/>
+																					<xsl:value-of select="xs:string(sername)"/>
 																				</gco:CharacterString>
 																			</xsl:for-each>
 																		</gmd:name>
 																		<gmd:issueIdentification>
 																			<xsl:for-each select="srccite/citeinfo/serinfo">
 																				<gco:CharacterString>
-																					<xsl:sequence select="xs:string(issue)"/>
+																					<xsl:value-of select="xs:string(issue)"/>
 																				</gco:CharacterString>
 																			</xsl:for-each>
 																		</gmd:issueIdentification>
@@ -4869,7 +4971,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 																<gmd:otherCitationDetails>
 																	<!--xsl:for-each select="srccite/citeinfo/othercit" -->
 																	<gco:CharacterString>
-																		<xsl:sequence select="xs:string(srccite/citeinfo/othercit)"/>
+																		<xsl:value-of select="xs:string(srccite/citeinfo/othercit)"/>
 																	</gco:CharacterString>
 																	<!-- /xsl:for-each -->
 																</gmd:otherCitationDetails>
@@ -4884,14 +4986,14 @@ utilitiesCommunication', concat(' ',string(.)))">
 																		<gmd:EX_TemporalExtent>
 																			<gmd:extent>
 																				<xsl:if test="(fn:contains(fn:lower-case(fn:normalize-space(fn:string(caldate))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(caldate))), 'unpublished'))">
-																					<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(caldate)))))"/></xsl:attribute>
+																					<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(caldate)))))"/></xsl:attribute>
 																				</xsl:if>
 																				<gml:TimeInstant>
-																					<xsl:attribute name="gml:id"><xsl:sequence select="fn:concat('TempEx.',generate-id())"/></xsl:attribute>
+																					<xsl:attribute name="gml:id"><xsl:value-of select="fn:concat('TempEx.',generate-id())"/></xsl:attribute>
 																					<gml:description>
-																						<xsl:sequence select="xs:string(xs:string($var_lineageSourceInfoNode/srctime/srccurr))"/>
+																						<xsl:value-of select="xs:string(xs:string($var_lineageSourceInfoNode/srctime/srccurr))"/>
 																					</gml:description>
-																					<xsl:variable name="var_DateTemp" as="node()">
+																					<xsl:variable name="var_DateTemp">
 																						<xsl:call-template name="usgin:dateFormat">
 																							<xsl:with-param name="inputDate" select="(caldate)"/>
 																							<xsl:with-param name="inputTime" select="(time)"/>
@@ -4919,14 +5021,14 @@ utilitiesCommunication', concat(' ',string(.)))">
 																		<gmd:EX_TemporalExtent>
 																			<gmd:extent>
 																				<xsl:if test="(fn:contains(fn:lower-case(fn:normalize-space(fn:string(caldate))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(caldate))), 'unpublished'))">
-																					<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(caldate)))))"/></xsl:attribute>
+																					<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(caldate)))))"/></xsl:attribute>
 																				</xsl:if>
 																				<gml:TimeInstant>
-																					<xsl:attribute name="gml:id"><xsl:sequence select="fn:concat('sourceTimeInst.',generate-id())"/></xsl:attribute>
+																					<xsl:attribute name="gml:id"><xsl:value-of select="fn:concat('sourceTimeInst.',generate-id())"/></xsl:attribute>
 																					<gml:description>
-																						<xsl:sequence select="xs:string(xs:string($var_lineageSourceInfoNode/srctime/srccurr))"/>
+																						<xsl:value-of select="xs:string(xs:string($var_lineageSourceInfoNode/srctime/srccurr))"/>
 																					</gml:description>
-																					<xsl:variable name="var_DateTemp" as="node()">
+																					<xsl:variable name="var_DateTemp">
 																						<xsl:call-template name="usgin:dateFormat">
 																							<xsl:with-param name="inputDate" select="(caldate)"/>
 																							<xsl:with-param name="inputTime" select="(time)"/>
@@ -4950,24 +5052,24 @@ utilitiesCommunication', concat(' ',string(.)))">
 																	</gmd:temporalElement>
 																</xsl:for-each>
 																<xsl:for-each select="srctime/timeinfo/rngdates">
-																	<xsl:variable name="var_rngdatesNode" as="node()" select="."/>
+																	<xsl:variable name="var_rngdatesNode" select="."/>
 																	<gmd:temporalElement>
 																		<gmd:EX_TemporalExtent>
 																			<gmd:extent>
 																				<xsl:if test="(fn:contains(fn:lower-case(fn:normalize-space(fn:string(begdate))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(begdate))), 'unpublished'))">
-																					<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(begdate)))))"/></xsl:attribute>
+																					<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(begdate)))))"/></xsl:attribute>
 																				</xsl:if>
 																				<gml:TimePeriod>
-																					<xsl:attribute name="gml:id"><xsl:sequence select="fn:concat('srcTempEx.',generate-id())"/></xsl:attribute>
+																					<xsl:attribute name="gml:id"><xsl:value-of select="fn:concat('srcTempEx.',generate-id())"/></xsl:attribute>
 																					<gml:description>
-																						<xsl:sequence select="xs:string(xs:string($var_lineageSourceInfoNode/srctime/srccurr))"/>
+																						<xsl:value-of select="xs:string(xs:string($var_lineageSourceInfoNode/srctime/srccurr))"/>
 																					</gml:description>
 																					<gml:beginPosition>
 																						<xsl:if test="fn:exists((if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/begdate))), 'present')) then 'now' else ()))">
-																							<xsl:attribute name="indeterminatePosition"><xsl:sequence select="(if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/begdate))), 'present')) then 'now' else ())"/></xsl:attribute>
+																							<xsl:attribute name="indeterminatePosition"><xsl:value-of select="(if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/begdate))), 'present')) then 'now' else ())"/></xsl:attribute>
 																						</xsl:if>
 																						<!-- can't use tempalate because that puts date in a gco:DateTime elelent, but needs to be gml:TimePosition here -->
-																						<xsl:variable name="var_DateTemp" as="node()">
+																						<xsl:variable name="var_DateTemp">
 																							<xsl:call-template name="usgin:dateFormat">
 																								<xsl:with-param name="inputDate" select="(begdate)"/>
 																								<xsl:with-param name="inputTime" select="(begtime)"/>
@@ -4985,10 +5087,12 @@ utilitiesCommunication', concat(' ',string(.)))">
 																						</xsl:for-each>
 																					</gml:beginPosition>
 																					<gml:endPosition>
-																						<xsl:if test="fn:exists((if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/enddate))), 'present')) then 'now' else ()))">
-																							<xsl:attribute name="indeterminatePosition"><xsl:sequence select="(if (fn:contains(fn:lower-case(fn:normalize-space(fn:string($var_rngdatesNode/enddate))), 'present')) then 'now' else ())"/></xsl:attribute>
+																						<xsl:if test="fn:contains(fn:string($var_rngdatesNode/enddate), 'present')">
+																							<xsl:attribute name="indeterminatePosition">
+																								<xsl:value-of select="string('now')"/>
+																							</xsl:attribute>
 																						</xsl:if>
-																						<xsl:variable name="var_DateTemp" as="node()">
+																						<xsl:variable name="var_DateTemp">
 																							<xsl:call-template name="usgin:dateFormat">
 																								<xsl:with-param name="inputDate" select="(enddate)"/>
 																								<xsl:with-param name="inputTime" select="(endtime)"/>
@@ -5025,47 +5129,47 @@ utilitiesCommunication', concat(' ',string(.)))">
 			</xsl:for-each>
 			<!-- metadata constraints -->
 			<xsl:for-each select="$var_metadataRoot">
-				<xsl:variable name="var2374_metadata" as="node()" select="."/>
+				<xsl:variable name="var2374_metadata" select="."/>
 				<xsl:for-each select="metainfo/metac">
 					<gmd:metadataConstraints>
 						<gmd:MD_LegalConstraints>
 							<gmd:accessConstraints>
 								<gmd:MD_RestrictionCode>
-									<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode'))"/></xsl:attribute>
-									<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI('otherRestrictions'))"/></xsl:attribute>
-									<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI('008'))"/></xsl:attribute>
+									<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode'))"/></xsl:attribute>
+									<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI('otherRestrictions'))"/></xsl:attribute>
+									<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI('008'))"/></xsl:attribute>
 								</gmd:MD_RestrictionCode>
 							</gmd:accessConstraints>
 							<gmd:useConstraints>
 								<gmd:MD_RestrictionCode>
 									<xsl:if test="$var2374_metadata/metainfo/metuc">
-										<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode'))"/></xsl:attribute>
+										<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode'))"/></xsl:attribute>
 									</xsl:if>
 									<xsl:if test="$var2374_metadata/metainfo/metuc">
-										<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string(xs:anyURI('otherRestrictions'))"/></xsl:attribute>
+										<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string(xs:anyURI('otherRestrictions'))"/></xsl:attribute>
 									</xsl:if>
 									<xsl:if test="$var2374_metadata/metainfo/metuc">
-										<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string(xs:anyURI('008'))"/></xsl:attribute>
+										<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string(xs:anyURI('008'))"/></xsl:attribute>
 									</xsl:if>
 								</gmd:MD_RestrictionCode>
 							</gmd:useConstraints>
 							<gmd:otherConstraints>
-								<xsl:variable name="var2378_cond_result_exists" as="xs:string?">
+								<xsl:variable name="var2378_cond_result_exists" >
 									<xsl:choose>
 										<xsl:when test="$var2374_metadata/metainfo/metuc">
 											<xsl:for-each select="$var2374_metadata/metainfo/metuc">
-												<xsl:sequence select="xs:string(.)"/>
+												<xsl:value-of select="xs:string(.)"/>
 											</xsl:for-each>
 										</xsl:when>
 										<xsl:otherwise>
-											<xsl:sequence select="' '"/>
+											<xsl:value-of select="' '"/>
 										</xsl:otherwise>
 									</xsl:choose>
 								</xsl:variable>
 								<xsl:if test="fn:exists($var2378_cond_result_exists)">
 									<gco:CharacterString>
-										<xsl:variable name="var2379_cond_result_exists" as="xs:string" select="(if (fn:exists($var2374_metadata/metainfo/metuc)) then ' Metadata Use Constraints: ' else ' ')"/>
-										<xsl:sequence select="fn:normalize-space(fn:concat(fn:concat(fn:concat('Metadata Access Constraints: ', xs:string(.)), $var2379_cond_result_exists), $var2378_cond_result_exists))"/>
+										<xsl:variable name="var2379_cond_result_exists"  select="(if (fn:exists($var2374_metadata/metainfo/metuc)) then ' Metadata Use Constraints: ' else ' ')"/>
+										<xsl:value-of select="fn:normalize-space(fn:concat(fn:concat(fn:concat('Metadata Access Constraints: ', xs:string(.)), $var2379_cond_result_exists), $var2378_cond_result_exists))"/>
 									</gco:CharacterString>
 								</xsl:if>
 							</gmd:otherConstraints>
@@ -5075,7 +5179,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 			</xsl:for-each>
 			<!-- security constraints -->
 			<xsl:for-each select="$var_metadataRoot/metainfo/metsi">
-				<xsl:variable name="var_lookupSecurityClassType" as="xs:string?">
+				<xsl:variable name="var_lookupSecurityClassType" >
 					<xsl:call-template name="vmf:securityClassType">
 						<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(metsc)))"/>
 					</xsl:call-template>
@@ -5086,16 +5190,16 @@ utilitiesCommunication', concat(' ',string(.)))">
 							<xsl:when test="fn:exists($var_lookupSecurityClassType) and string-length(xs:string($var_lookupSecurityClassType))>0">
 								<gmd:classification>
 									<gmd:MD_ClassificationCode>
-										<xsl:attribute name="codeListValue"><xsl:sequence select="xs:string($var_lookupSecurityClassType)"/></xsl:attribute>
-										<xsl:attribute name="codeList"><xsl:sequence select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ClassificationCode'))"/></xsl:attribute>
-										<xsl:variable name="var2388_result_securityClassCode" as="xs:string?">
+										<xsl:attribute name="codeListValue"><xsl:value-of select="xs:string($var_lookupSecurityClassType)"/></xsl:attribute>
+										<xsl:attribute name="codeList"><xsl:value-of select="xs:string(xs:anyURI('http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ClassificationCode'))"/></xsl:attribute>
+										<xsl:variable name="var2388_result_securityClassCode" >
 											<xsl:call-template name="vmf:securityClassCode">
 												<xsl:with-param name="input" select="fn:upper-case(fn:normalize-space(xs:string(metsc)))"/>
 											</xsl:call-template>
 										</xsl:variable>
-										<xsl:variable name="var2387_cond_result_exists" as="xs:string?" select="(if (fn:exists($var2388_result_securityClassCode)) then $var2388_result_securityClassCode else ())"/>
+										<xsl:variable name="var2387_cond_result_exists"  select="(if (fn:exists($var2388_result_securityClassCode)) then $var2388_result_securityClassCode else ())"/>
 										<xsl:if test="fn:exists($var2387_cond_result_exists)">
-											<xsl:attribute name="codeSpace"><xsl:sequence select="xs:string($var2387_cond_result_exists)"/></xsl:attribute>
+											<xsl:attribute name="codeSpace"><xsl:value-of select="xs:string($var2387_cond_result_exists)"/></xsl:attribute>
 										</xsl:if>
 									</gmd:MD_ClassificationCode>
 								</gmd:classification>
@@ -5107,7 +5211,7 @@ utilitiesCommunication', concat(' ',string(.)))">
 						<xsl:if test="fn:exists(metscs) and string-length(xs:string(metscs))>0">
 							<gmd:classificationSystem>
 								<gco:CharacterString>
-									<xsl:sequence select="xs:string(metscs)"/>
+									<xsl:value-of select="xs:string(metscs)"/>
 								</gco:CharacterString>
 							</gmd:classificationSystem>
 						</xsl:if>
@@ -5118,134 +5222,85 @@ utilitiesCommunication', concat(' ',string(.)))">
 			<gmd:metadataMaintenance>
 				<gmd:MD_MaintenanceInformation>
 					<gmd:maintenanceAndUpdateFrequency>
-						<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string('unknown'))"/></xsl:attribute>
+						<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string('unknown'))"/></xsl:attribute>
 					</gmd:maintenanceAndUpdateFrequency>
 					<xsl:for-each select="$var_metadataRoot/metainfo/metfrd">
 						<gmd:dateOfNextUpdate>
 							<xsl:if test="(fn:contains(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), 'unpublished'))">
-								<xsl:attribute name="gco:nilReason"><xsl:sequence select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(xs:string(.))))))"/></xsl:attribute>
+								<xsl:attribute name="gco:nilReason"><xsl:value-of select="xs:string(xs:string(fn:lower-case(fn:normalize-space(fn:string(xs:string(.))))))"/></xsl:attribute>
 							</xsl:if>
-							<xsl:variable name="var2392_cond_result_logicalor" as="xs:string?">
+							<xsl:variable name="var2392_cond_result_logicalor" >
 								<xsl:if test="not(((fn:contains(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), 'unpublished')) or fn:contains(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), 'present')))">
-									<xsl:variable name="var2397_map_result_distinctvalues" as="xs:string*">
+									<xsl:variable name="var2397_map_result_distinctvalues" >
 										<xsl:for-each select="fn:distinct-values((if (((fn:contains(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), 'unpublished')) or fn:contains(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), 'present'))) then () else fn:concat(fn:concat(fn:concat(fn:concat(fn:substring(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), xs:double(xs:decimal(0)), xs:double(xs:decimal(5))), '-'), fn:substring(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), xs:double(xs:decimal(5)), xs:double(xs:decimal(2)))), '-'), fn:substring(fn:lower-case(fn:normalize-space(fn:string(xs:string(.)))), xs:double(xs:decimal(7)), xs:double(xs:decimal(2))))))">
 											<xsl:choose>
 												<xsl:when test="fn:ends-with(., '-')">
 													<xsl:if test="fn:ends-with(., '-')">
 														<xsl:if test="fn:exists((if (((('0' != .) and ('false' != .)) and fn:boolean(.))) then fn:substring(., xs:double(xs:decimal(0)), xs:double(fn:string-length(.))) else ()))">
-															<xsl:sequence select="(if (((('0' != .) and ('false' != .)) and fn:boolean(.))) then fn:substring(., xs:double(xs:decimal(0)), xs:double(fn:string-length(.))) else ())"/>
+															<xsl:value-of select="(if (((('0' != .) and ('false' != .)) and fn:boolean(.))) then fn:substring(., xs:double(xs:decimal(0)), xs:double(fn:string-length(.))) else ())"/>
 														</xsl:if>
 													</xsl:if>
 												</xsl:when>
 												<xsl:otherwise>
-													<xsl:sequence select="."/>
+													<xsl:value-of select="."/>
 												</xsl:otherwise>
 											</xsl:choose>
 										</xsl:for-each>
 									</xsl:variable>
-									<xsl:variable name="var2396_map_result_distinctvalues" as="xs:string*">
+									<xsl:variable name="var2396_map_result_distinctvalues" >
 										<xsl:for-each select="fn:distinct-values($var2397_map_result_distinctvalues)">
-											<xsl:variable name="var2402_cond_result_endswith" as="xs:string?">
+											<xsl:variable name="var2402_cond_result_endswith" >
 												<xsl:choose>
 													<xsl:when test="fn:ends-with(fn:normalize-space(.), '-')">
 														<xsl:if test="fn:ends-with(fn:normalize-space(.), '-')">
 															<xsl:if test="fn:exists((if (((('0' != fn:normalize-space(.)) and ('false' != fn:normalize-space(.))) and fn:boolean(fn:normalize-space(.)))) then fn:substring(fn:normalize-space(.), xs:double(xs:decimal(0)), xs:double((xs:decimal(fn:string-length(fn:normalize-space(.))) - xs:decimal(0)))) else ()))">
-																<xsl:sequence select="(if (((('0' != fn:normalize-space(.)) and ('false' != fn:normalize-space(.))) and fn:boolean(fn:normalize-space(.)))) then fn:substring(fn:normalize-space(.), xs:double(xs:decimal(0)), xs:double((xs:decimal(fn:string-length(fn:normalize-space(.))) - xs:decimal(0)))) else ())"/>
+																<xsl:value-of select="(if (((('0' != fn:normalize-space(.)) and ('false' != fn:normalize-space(.))) and fn:boolean(fn:normalize-space(.)))) then fn:substring(fn:normalize-space(.), xs:double(xs:decimal(0)), xs:double((xs:decimal(fn:string-length(fn:normalize-space(.))) - xs:decimal(0)))) else ())"/>
 															</xsl:if>
 														</xsl:if>
 													</xsl:when>
 													<xsl:otherwise>
-														<xsl:sequence select="."/>
+														<xsl:value-of select="."/>
 													</xsl:otherwise>
 												</xsl:choose>
 											</xsl:variable>
 											<xsl:if test="fn:exists($var2402_cond_result_endswith)">
-												<xsl:sequence select="$var2402_cond_result_endswith"/>
+												<xsl:value-of select="$var2402_cond_result_endswith"/>
 											</xsl:if>
 										</xsl:for-each>
 									</xsl:variable>
 									<xsl:if test="fn:exists($var2396_map_result_distinctvalues)">
-										<xsl:sequence select="fn:string-join($var2396_map_result_distinctvalues, ' ')"/>
+										<xsl:value-of select="fn:string-join($var2396_map_result_distinctvalues, ' ')"/>
 									</xsl:if>
 								</xsl:if>
 							</xsl:variable>
 							<xsl:for-each select="$var2392_cond_result_logicalor">
 								<gco:Date>
-									<xsl:sequence select="xs:string(xs:string(fn:string(fn:normalize-space(.))))"/>
+									<xsl:value-of select="xs:string(xs:string(fn:string(fn:normalize-space(.))))"/>
 								</gco:Date>
 							</xsl:for-each>
 						</gmd:dateOfNextUpdate>
 					</xsl:for-each>
 					<gmd:maintenanceNote>
 						<xsl:for-each select="$var_metadataRoot">
-							<xsl:variable name="var2413_map_select_metadata">
-								<xsl:variable name="var_DateTemp" as="xs:string">
+							<!-- metadata review date; if present will be concatenated with the maintenance note -->:
+							<xsl:variable name="metRevDateRept">
+								<xsl:choose>
+									<xsl:when test="fn:exists(metainfo/metrd)">
+								<xsl:variable name="var_DateTemp" >
 									<xsl:call-template name="usgin:TimePositionFormat">
 										<xsl:with-param name="inputDate" select="(metainfo/metrd)"/>
-										<xsl:with-param name="inputTime" select="()"/>
+										<xsl:with-param name="inputTime"/>
 									</xsl:call-template>
 								</xsl:variable>
-								<xsl:if test="fn:exists($var_DateTemp)">
-									<xsl:value-of select="fn:string($var_DateTemp)"/>
-								</xsl:if>
-								<!-- metadata review date; if present will be concatenated with the maintenance note -->:
-								<!--xsl:for-each select="$var_metadataRoot/metainfo/metrd">
-									<xsl:variable name="var2417_cond_result_logicalor" as="xs:string?">
-										<xsl:if test="not(((fn:contains(fn:lower-case(fn:normalize-space(fn:string(.))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(.))), 'unpublished')) or fn:contains(fn:lower-case(fn:normalize-space(fn:string(.))), 'present')))">
-											<xsl:variable name="var2422_map_result_distinctvalues" as="xs:string*">
-												<xsl:for-each select="fn:distinct-values(if (((fn:contains(fn:lower-case(fn:normalize-space(fn:string(.))), 'unknown') or fn:contains(fn:lower-case(fn:normalize-space(fn:string(.))), 'unpublished')) or fn:contains(fn:lower-case(fn:normalize-space(fn:string(.))), 'present'))) then () else fn:concat(fn:substring(fn:lower-case(fn:normalize-space(fn:string(.))), 0, 5), '-', fn:substring(fn:lower-case(fn:normalize-space(fn:string(.))), 5, 2), '-', fn:substring(fn:lower-case(fn:normalize-space(fn:string(.))), 7,2)))">
-													<xsl:choose>
-														<xsl:when test="fn:ends-with(., '-')">
-															<xsl:if test="fn:ends-with(., '-')">
-																<xsl:if test="fn:exists((if (((('0' != .) and ('false' != .)) and fn:boolean(.))) then fn:substring(., xs:double(xs:decimal(0)), xs:double(fn:string-length(.))) else ()))">
-																	<xsl:sequence select="(if (((('0' != .) and ('false' != .)) and fn:boolean(.))) then fn:substring(., xs:double(xs:decimal(0)), xs:double(fn:string-length(.))) else ())"/>
-																</xsl:if>
-															</xsl:if>
-														</xsl:when>
-														<xsl:otherwise>
-															<xsl:sequence select="."/>
-														</xsl:otherwise>
-													</xsl:choose>
-												</xsl:for-each>
-											</xsl:variable>
-											<xsl:variable name="var2421_map_result_distinctvalues" as="xs:string*">
-												<xsl:for-each select="fn:distinct-values($var2422_map_result_distinctvalues)">
-													<xsl:variable name="var2427_cond_result_endswith" as="xs:string?">
-														<xsl:choose>
-															<xsl:when test="fn:ends-with(fn:normalize-space(.), '-')">
-																<xsl:if test="fn:ends-with(fn:normalize-space(.), '-')">
-																	<xsl:if test="fn:exists((if (((('0' != fn:normalize-space(.)) and ('false' != fn:normalize-space(.))) and fn:boolean(fn:normalize-space(.)))) then fn:substring(fn:normalize-space(.), xs:double(xs:decimal(0)), xs:double((xs:decimal(fn:string-length(fn:normalize-space(.))) - xs:decimal(0)))) else ()))">
-																		<xsl:sequence select="(if (((('0' != fn:normalize-space(.)) and ('false' != fn:normalize-space(.))) and fn:boolean(fn:normalize-space(.)))) then fn:substring(fn:normalize-space(.), xs:double(xs:decimal(0)), xs:double((xs:decimal(fn:string-length(fn:normalize-space(.))) - xs:decimal(0)))) else ())"/>
-																	</xsl:if>
-																</xsl:if>
-															</xsl:when>
-															<xsl:otherwise>
-																<xsl:sequence select="."/>
-															</xsl:otherwise>
-														</xsl:choose>
-													</xsl:variable>
-													<xsl:if test="fn:exists($var2427_cond_result_endswith)">
-														<xsl:sequence select="$var2427_cond_result_endswith"/>
-													</xsl:if>
-												</xsl:for-each>
-											</xsl:variable>
-											<xsl:if test="fn:exists($var2421_map_result_distinctvalues)">
-												<xsl:sequence select="fn:string-join($var2421_map_result_distinctvalues, ' ')"/>
-											</xsl:if>
-										</xsl:if>
-									</xsl:variable>
-									<xsl:for-each select="$var2417_cond_result_logicalor">
-										<xsl:value-of select="fn:string(fn:normalize-space(.))"/>
-									</xsl:for-each>
-								</xsl:for-each -->
+										<xsl:value-of select="concat(string(' Most recent metadata content review date: '), fn:string($var_DateTemp))"/> </xsl:when>
+									<xsl:otherwise>
+										<xsl:value-of select="''"/>
+									</xsl:otherwise>
+								</xsl:choose>
 							</xsl:variable>
-							<xsl:variable name="var2411_cond_result_exists" as="xs:string?" select="(if (fn:exists($var2413_map_select_metadata)) then $var2413_map_select_metadata else ' ')"/>
-							<xsl:if test="fn:exists($var2411_cond_result_exists)">
 								<gco:CharacterString>
-									<xsl:variable name="var2412_cond_result_exists" as="xs:string" select="(if (fn:exists($var_metadataRoot/metainfo/metrd)) then ' Most recent metadata content review date: ' else ' ')"/>
-									<xsl:sequence select="fn:normalize-space(fn:string(fn:concat('This metadata was automatically generated from the ', xs:string(metainfo/metstdn), ' standard, version ', xs:string(metainfo/metstdv), ' using the August 2011-REH version of the FGDC CSDGM to ISO 19115-2 transform modified and updatated by SMR 2012-02-02 to generate USGIN compatible ISO19139 XML. ', $var2412_cond_result_exists, $var2411_cond_result_exists)))"/>
+								<xsl:value-of select="fn:normalize-space(fn:concat('This metadata was automatically generated from the ', xs:string(metainfo/metstdn), ' standard, version ', xs:string(metainfo/metstdv), ' using the August 2011-REH version of the FGDC CSDGM to ISO 19115-2 transform modified and updatated by SMR 2012-02-02 to generate USGIN compatible ISO19139 XML, and 2014-11-23 to work with xslt 1.0 in GeoPortal. ', $metRevDateRept))"/>
 								</gco:CharacterString>
-							</xsl:if>
 						</xsl:for-each>
 					</gmd:maintenanceNote>
 					<gmd:contact>
