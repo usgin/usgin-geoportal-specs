@@ -599,7 +599,7 @@ SMR 2014-12-01	remove all upper-case, lower-case, replace, exists function calls
 		each of which has formname, one of version number or date, specification, informationContent
 		decompressionTechnique and transferSize.-->
 		<gmd:MD_Format>
-			<xsl:if test="count($theFmtID)>0 and string-length(string($theFmtID)) &gt; 0">
+			<xsl:if test="string-length(string($theFmtID)) &gt; 0">
 				<xsl:attribute name="id">
 					<xsl:value-of select="$theFmtID"/>
 				</xsl:attribute>
@@ -889,11 +889,6 @@ SMR 2014-12-01	remove all upper-case, lower-case, replace, exists function calls
 	</xsl:template>
 	<xsl:template name="vmf:geometryCode">
 		<xsl:param name="input"/>
-		<xsl:variable name="var_ucinput">
-			<xsl:call-template name="ucase">
-				<xsl:with-param name="theString" select="$input"/>
-			</xsl:call-template>
-		</xsl:variable>
 		<xsl:variable name="var_ucinput">
 			<xsl:call-template name="ucase">
 				<xsl:with-param name="theString" select="$input"/>
@@ -1953,10 +1948,10 @@ SMR 2014-12-01	remove all upper-case, lower-case, replace, exists function calls
 							<gmd:numberOfDimensions>
 								<xsl:choose>
 									<xsl:when
-										test="count(string(number($var_rowCount_exists + $var_colCount_exists + $var_vrtCount_exists)))>0">
+										test="(number($var_rowCount_exists) + number($var_colCount_exists) + number($var_vrtCount_exists))>0">
 										<gco:Integer>
 											<xsl:value-of
-												select="string(number($var_rowCount_exists + $var_colCount_exists + $var_vrtCount_exists))"
+												select="string((number($var_rowCount_exists) + number($var_colCount_exists) + number($var_vrtCount_exists)))"
 											/>
 										</gco:Integer>
 									</xsl:when>
@@ -2046,7 +2041,7 @@ SMR 2014-12-01	remove all upper-case, lower-case, replace, exists function calls
 							</xsl:variable>
 							<!-- if have gridSpatialRepresnetation, cellGeometry is mandatory -->
 							<xsl:choose>
-								<xsl:when test="count($var_rasttypeGeometryType)>0">
+								<xsl:when test="string-length($var_rasttypeGeometryType)>0">
 									<gmd:cellGeometry>
 										<gmd:MD_CellGeometryCode
 											codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CellGeometryCode">
@@ -2062,7 +2057,7 @@ SMR 2014-12-01	remove all upper-case, lower-case, replace, exists function calls
 												/>
 												</xsl:call-template>
 											</xsl:variable>
-											<xsl:if test="count($var_rasttypeGeometryCode)>0">
+											<xsl:if test="string-length($var_rasttypeGeometryCode)>0">
 												<xsl:attribute name="codeSpace">
 												<xsl:value-of
 												select="string($var_rasttypeGeometryCode)"
@@ -3423,15 +3418,18 @@ An xsl template for displaying metadata in ArcInfo8 with the traditional FGDC lo
 							</gco:CharacterString>
 						</gmd:language>
 						<!-- messy logic to extract ISO topic category  -->
+						<xsl:variable name="var_ISOCategories">
+							<xsl:value-of select="' biota boundaries climatologyMeteorologyAtmosphere 
+								economy elevation environment farming geoscientificInformation 
+								health imageryBaseMapsEarthCover inlandWaters intelligenceMilitary 
+								location oceans planningCadastre society structure transportation 
+								utilitiesCommunication'"/>
+						</xsl:variable>
 						<xsl:variable name="hasISOtopic">
 							<xsl:for-each select="keywords/theme">
 								<xsl:for-each select="themekey">
 									<xsl:if
-										test="contains(' biota boundaries climatologyMeteorologyAtmosphere 
-economy elevation environment farming geoscientificInformation 
-health imageryBaseMapsEarthCover inlandWaters intelligenceMilitary 
-location oceans planningCadastre society structure transportation 
-utilitiesCommunication', concat(' ',normalize-space(string(.))))">
+										test="contains($var_ISOCategories, concat(' ',normalize-space(string(.))))">
 										<!-- set hasISOtopic variable -->
 										<xsl:value-of select="string(.)"/>
 									</xsl:if>
@@ -3441,26 +3439,28 @@ utilitiesCommunication', concat(' ',normalize-space(string(.))))">
 							<!--	 flag to indicate if catch an ISO topic -->
 						</xsl:variable>
 						<xsl:choose>
-							<xsl:when test="string-length($hasISOtopic)>0">
-								<gmd:topicCategory>
-									<gmd:MD_TopicCategoryCode>
-										<xsl:value-of select="string($hasISOtopic)"/>
-									</gmd:MD_TopicCategoryCode>
-								</gmd:topicCategory>
-								<xsl:value-of select="$hasISOtopic"/>
+							<xsl:when test="string-length(string($hasISOtopic))>0">
+								<xsl:for-each select="keywords/theme">
+									<xsl:for-each select="themekey">
+										<xsl:if
+											test="contains($var_ISOCategories, concat(' ',normalize-space(string(.))))">
+											<gmd:topicCategory>
+												<gmd:MD_TopicCategoryCode><xsl:value-of select="normalize-space(string(.))"/></gmd:MD_TopicCategoryCode>
+											</gmd:topicCategory>
+										</xsl:if>
+									</xsl:for-each>
+								</xsl:for-each>
 							</xsl:when>
 							<xsl:otherwise>
 								<gmd:topicCategory gco:nilReason="missing">
-									<gmd:MD_TopicCategoryCode>
-										<!-- put in a dummy value so will pass profile rules -->
-										<xsl:value-of select="string('geoscientificInformation')"/>
-									</gmd:MD_TopicCategoryCode>
+									<!-- put in a dummy value so will pass profile rules -->
+									<gmd:MD_TopicCategoryCode><xsl:value-of select="normalize-space(string('geoscientificInformation'))"/></gmd:MD_TopicCategoryCode>
 								</gmd:topicCategory>
 							</xsl:otherwise>
 						</xsl:choose>
 						<!-- end topic category section -->
 
-
+						<xsl:if test="count($var_metadataRoot/distinfo/techpreq)>0 or native">
 						<gmd:environmentDescription>
 								<gco:CharacterString>
 									<xsl:if
@@ -3479,6 +3479,7 @@ utilitiesCommunication', concat(' ',normalize-space(string(.))))">
 									</xsl:if>
 								</gco:CharacterString>
 						</gmd:environmentDescription>
+						</xsl:if>
 						
 						<!-- Extent section, geographic, vertical, temporal... -->
 						<gmd:extent>
@@ -3997,7 +3998,7 @@ utilitiesCommunication', concat(' ',normalize-space(string(.))))">
 							<!-- process citeinfo/onlink into DigitalTransferOptions with unknonwn distributor -->
 
 							<!-- distribution format -->
-							<xsl:for-each select="$var_metadataRoot/distinfo[1]/stdorder[1]/digform[1]">
+							<xsl:for-each select="$var_metadataRoot/distinfo[1]//digform[1]">
 								<gmd:distributionFormat>
 									<xsl:call-template name="usgin:format">
 										<xsl:with-param name="thedigform" select="."/>
@@ -4708,7 +4709,7 @@ utilitiesCommunication', concat(' ',normalize-space(string(.))))">
 						</xsl:if>
 												</xsl:variable>
 												<xsl:if
-													test="count(srcscale)>0 and ($var_lcsrcscale = 'unknown') or (number(srcscale)=number(srcscale))">
+													test="count(srcscale)>0 and (($var_lcsrcscale = 'unknown') or number(srcscale)=number(srcscale))">
 													<gmd:scaleDenominator>
 														<gmd:MD_RepresentativeFraction>
 															<gmd:denominator>
@@ -5103,7 +5104,7 @@ utilitiesCommunication', concat(' ',normalize-space(string(.))))">
 								</gco:CharacterString>
 							</gmd:classificationSystem>
 						</xsl:if>
-						<xsl:if test="count(metshd)>0 and string-length(string(metshd))>0">
+						<xsl:if test="string-length(string(metshd))>0">
 							<gmd:handlingDescription>
 								<gco:CharacterString>
 									<xsl:value-of select="string(metshd)"/>
