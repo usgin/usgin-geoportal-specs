@@ -3419,11 +3419,11 @@ An xsl template for displaying metadata in ArcInfo8 with the traditional FGDC lo
 						</gmd:language>
 						<!-- messy logic to extract ISO topic category  -->
 						<xsl:variable name="var_ISOCategories">
-							<xsl:value-of select="' biota boundaries climatologyMeteorologyAtmosphere 
+							<xsl:value-of select="string(' biota boundaries climatologyMeteorologyAtmosphere 
 								economy elevation environment farming geoscientificInformation 
 								health imageryBaseMapsEarthCover inlandWaters intelligenceMilitary 
 								location oceans planningCadastre society structure transportation 
-								utilitiesCommunication'"/>
+								utilitiesCommunication')"/>
 						</xsl:variable>
 						<xsl:variable name="hasISOtopic">
 							<xsl:for-each select="keywords/theme">
@@ -3460,11 +3460,12 @@ An xsl template for displaying metadata in ArcInfo8 with the traditional FGDC lo
 						</xsl:choose>
 						<!-- end topic category section -->
 
-						<xsl:if test="count($var_metadataRoot/distinfo/techpreq)>0 or native">
+						<xsl:if test="not(not(count($var_metadataRoot/distinfo/techpreq)&gt; 0) and not(native))">
+							<!-- kludge to implement logical or -->
 						<gmd:environmentDescription>
 								<gco:CharacterString>
 									<xsl:if
-										test="(count($var_metadataRoot/distinfo/techpreq)>0)">
+										test="(count($var_metadataRoot/distinfo/techpreq) &gt; 0)">
 										<xsl:value-of
 											select="concat(string(' Technical Prerequisites: '),string($var_metadataRoot/distinfo/techpreq))"/>
 									</xsl:if>
@@ -3513,8 +3514,7 @@ An xsl template for displaying metadata in ArcInfo8 with the traditional FGDC lo
 												<xsl:when
 												test="number(spdom/bounding/eastbc) = number(spdom/bounding/eastbc)">
 												<xsl:value-of
-												select="string(number(spdom/bounding/eastbc))"
-												/>
+												select="number(spdom/bounding/eastbc)"/>
 												</xsl:when>
 												<xsl:otherwise>
 												<xsl:value-of select="string('-60')"/>
